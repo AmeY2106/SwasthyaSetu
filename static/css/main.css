@@ -1,0 +1,243 @@
+:root {
+  --primary: #0a7c6b;
+  --primary-dark: #086053;
+  --primary-light: #1aa28d;
+  --accent: #0d6efd;
+  --emergency: #dc3545;
+  --success: #198754;
+  --warning: #ffc107;
+  --info: #0dcaf0;
+  --sidebar-bg: #1a2340;
+  --sidebar-bg-2: #0f172a;
+  --sidebar-text: #c8d6f0;
+  --sidebar-text-muted: #8da3c8;
+  --body-bg: #f4f7fc;
+  --card-bg: #ffffff;
+  --text: #1a2340;
+  --text-muted: #6c757d;
+  --border: #e7ecf3;
+  --radius: 16px;
+  --shadow: 0 4px 18px rgba(15, 23, 42, 0.07);
+  --shadow-hover: 0 10px 28px rgba(15, 23, 42, 0.13);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--body-bg);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--primary-dark); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none;
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-weight: 600;
+  color: #fff;
+  transition: all .2s;
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--primary-dark), #0a58ca); transform: translateY(-2px); }
+.btn-emergency {
+  background: linear-gradient(135deg, #dc3545, #c1121f);
+  border: none; border-radius: 30px; padding: 10px 22px; font-weight: 700; color: #fff;
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.35);
+}
+.btn-emergency:hover { background: linear-gradient(135deg, #b02a37, #a30c1d); color: #fff; transform: translateY(-2px); }
+.btn-soft { background: #eef3fb; color: var(--accent); border: none; border-radius: 30px; padding: 8px 18px; font-weight:600; }
+.btn-soft:hover { background: #dde6f5; color: var(--primary-dark); }
+
+.card-soft {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  transition: box-shadow .2s, transform .2s;
+}
+.card-soft:hover { box-shadow: var(--shadow-hover); transform: translateY(-3px); }
+
+.section-title {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--text);
+  margin-bottom: 18px;
+  position: relative;
+  padding-left: 12px;
+}
+.section-title::before {
+  content: ''; position: absolute; left: 0; top: 6px; height: 22px; width: 4px;
+  background: linear-gradient(180deg, var(--primary), var(--accent));
+  border-radius: 4px;
+}
+
+.brand-pulse {
+  display: inline-block;
+  width: 14px; height: 14px;
+  background: #28d17c;
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+  vertical-align: middle;
+}
+.brand-pulse::after {
+  content: '';
+  position: absolute; inset: -6px;
+  border-radius: 50%;
+  background: rgba(40, 209, 124, 0.5);
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.hero {
+  background: linear-gradient(135deg, #0a7c6b 0%, #0d6efd 100%);
+  color: white;
+  padding: 70px 0 80px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 28px 28px;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0, transparent 40%),
+                    radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0, transparent 35%);
+  pointer-events: none;
+}
+.hero h1 { font-weight: 800; font-size: 2.7rem; margin-bottom: 14px; }
+.hero p { font-size: 1.1rem; opacity: .92; }
+
+.stat-card {
+  border-radius: var(--radius);
+  padding: 22px;
+  color: white;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform .25s;
+}
+.stat-card:hover { transform: translateY(-4px); }
+.stat-card .icon {
+  position: absolute; right: -10px; top: -10px;
+  font-size: 4.4rem; opacity: 0.18; line-height: 1;
+}
+.stat-card .label { font-size: .85rem; opacity: .95; text-transform: uppercase; letter-spacing: 1px; }
+.stat-card .value { font-size: 2.2rem; font-weight: 800; margin-top: 6px; }
+
+.bg-grad-1 { background: linear-gradient(135deg, #0a7c6b, #1aa28d); }
+.bg-grad-2 { background: linear-gradient(135deg, #0d6efd, #6610f2); }
+.bg-grad-3 { background: linear-gradient(135deg, #dc3545, #ff6b6b); }
+.bg-grad-4 { background: linear-gradient(135deg, #fd7e14, #ffc107); }
+.bg-grad-5 { background: linear-gradient(135deg, #198754, #20c997); }
+.bg-grad-6 { background: linear-gradient(135deg, #6f42c1, #d63384); }
+
+.service-badge {
+  display: inline-block;
+  background: #eef6f5;
+  color: var(--primary-dark);
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: .8rem;
+  font-weight: 600;
+  margin: 3px 4px 3px 0;
+  border: 1px solid #cfe7e2;
+}
+.service-badge i { margin-right: 4px; color: var(--primary); }
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.status-available, .status-confirmed, .status-resolved { background: #d4f4e2; color: #0f5132; }
+.status-pending, .status-requested, .status-open { background: #fff3cd; color: #664d03; }
+.status-booked, .status-assigned, .status-on_route { background: #cfe2ff; color: #084298; }
+.status-cancelled, .status-rejected, .status-emergency_reserved { background: #f8d7da; color: #842029; }
+.status-discharged, .status-reached { background: #cff4fc; color: #055160; }
+.status-maintenance { background: #e2e3e5; color: #41464b; }
+
+.flash-container { position: fixed; top: 80px; right: 18px; z-index: 1080; max-width: 380px; }
+.alert { border-radius: 14px; box-shadow: var(--shadow); animation: slideInRight .3s; }
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.table { background: white; border-radius: var(--radius); overflow: hidden; }
+.table thead { background: #f1f5fb; color: var(--text); }
+.table th { font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .5px; }
+
+.form-control, .form-select {
+  border-radius: 12px; padding: 10px 14px; border: 1.5px solid #e1e7f0;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 .2rem rgba(10, 124, 107, .15);
+}
+.form-label { font-weight: 600; color: #455571; font-size: .92rem; }
+
+.footer {
+  background: #1a2340; color: #c8d6f0;
+  padding: 30px 0; margin-top: 60px;
+  border-radius: 28px 28px 0 0;
+}
+.footer a { color: #95b3e0; }
+.footer a:hover { color: white; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp .6s ease-out; }
+
+.qr-card {
+  background: white; padding: 24px; border-radius: var(--radius);
+  text-align: center; box-shadow: var(--shadow);
+  border: 2px dashed var(--primary-light);
+}
+.qr-card canvas, .qr-card img { margin: 16px auto; display: block; }
+
+.emergency-card {
+  background: linear-gradient(135deg, #dc3545 0%, #c1121f 100%);
+  color: white; padding: 30px; border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(220, 53, 69, 0.3);
+}
+.emergency-card .pulse-icon { font-size: 3rem; animation: pulse-icon 1.5s infinite; }
+@keyframes pulse-icon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.hospital-card {
+  background: white; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+  transition: all .25s; border: 1px solid var(--border);
+}
+.hospital-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-4px); }
+.hospital-card .hospital-thumb {
+  height: 140px; background: linear-gradient(135deg, #0a7c6b, #0d6efd);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 3rem;
+}
+.hospital-card .body { padding: 18px; }
+.hospital-card .rating { color: #ffc107; font-weight: 600; }
+
+.print-only { display: none; }
+@media print {
+  .print-only { display: block; }
+  .no-print, .sidebar, .topbar, .footer, .btn { display: none !important; }
+  body { background: white; }
+  .card-soft { box-shadow: none; border: 1px solid #ccc; }
+}

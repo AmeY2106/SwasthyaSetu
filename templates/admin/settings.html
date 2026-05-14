@@ -1,35 +1,26 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8" data-aos="fade-up">
-        <div class="card">
-            <div class="card-header bg-primary text-white fw-bold">
-                <i class="fas fa-cog me-2"></i>Website Settings
-            </div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.site_name.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-globe"></i></span>
-                            {{ form.site_name(class="form-control") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.logo.label(class="form-label fw-bold") }}
-                        {{ form.logo(class="form-control") }}
-                        {% if settings.logo_filename and settings.logo_filename != 'default-logo.png' %}
-                        <div class="mt-3 text-center">
-                            <img src="{{ url_for('uploaded_file', filename=settings.logo_filename) }}" width="120" class="img-thumbnail rounded-circle shadow">
-                            <p class="text-muted small mt-1">Current logo</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {{ form.submit(class="btn btn-primary rounded-pill py-2 w-100") }}
-                </form>
-            </div>
-        </div>
+<h2 class="section-title">Site Settings</h2>
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card-soft">
+      <form method="post" enctype="multipart/form-data">{{ form.hidden_tag() }}
+        <div class="mb-3"><label class="form-label">Site Name</label>{{ form.site_name(class='form-control') }}</div>
+        <div class="mb-3"><label class="form-label">Logo</label>{{ form.logo(class='form-control') }}</div>
+        <button class="btn btn-primary">Update Settings</button>
+      </form>
     </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card-soft text-center">
+      <h6 class="text-muted">Current Logo</h6>
+      {% if settings.logo_filename and settings.logo_filename != 'default-logo.png' %}
+        <img src="{{ url_for('uploaded_file', filename=settings.logo_filename) }}" style="max-height:120px;">
+      {% else %}
+        <div style="font-size:5rem;color:#0d6efd;"><i class="bi bi-heart-pulse-fill"></i></div>
+        <small class="text-muted">Default brand mark</small>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock %}

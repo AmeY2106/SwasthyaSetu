@@ -1,29 +1,20 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="glass-card" data-aos="fade-up">
-    <div class="card-header bg-primary text-white">
-        <h5><i class="fas fa-users me-2"></i>Patient Registry</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover data-table">
-                <thead>
-                    <tr><th>Unique ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {% for u in patients %}
-                    <tr>
-                        <td><span class="badge bg-secondary">{{ u.unique_id }}</span></td>
-                        <td>{{ u.patient_profile.full_name }}</td>
-                        <td>{{ u.email }}</td>
-                        <td>{{ u.patient_profile.phone }}</td>
-                        <td>{{ u.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td><a href="{{ url_for('admin_patient_detail', patient_id=u.id) }}" class="btn btn-sm btn-info rounded-pill">View Bookings</a></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<h2 class="section-title">Manage Patients</h2>
+<div class="card-soft">
+  <div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>Patient ID</th><th>Email</th><th>Name</th><th>Phone</th><th>Bookings</th><th></th></tr></thead>
+    <tbody>
+      {% for p in patients %}
+      <tr>
+        <td>{{ p.unique_id or '—' }}</td><td>{{ p.email }}</td>
+        <td>{{ p.patient_profile.full_name if p.patient_profile else '—' }}</td>
+        <td>{{ p.patient_profile.phone if p.patient_profile else '—' }}</td>
+        <td>{{ p.bookings|length }}</td>
+        <td><a class="btn btn-soft btn-sm" href="{{ url_for('admin_patient_detail', patient_id=p.id) }}"><i class="bi bi-eye"></i></a></td>
+      </tr>
+      {% else %}<tr><td colspan="6" class="text-center text-muted">No patients yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
 </div>
 {% endblock %}

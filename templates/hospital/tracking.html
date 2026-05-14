@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">Live Ambulance Tracking</h2>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card-soft p-2"><div id="map"></div></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="tracking-panel">
+      <h5 class="mb-3"><i class="fa-solid fa-truck-medical text-danger"></i> Active Trips</h5>
+      {% if active_bookings %}
+        {% for ab in active_bookings %}
+        <div class="border-bottom py-2">
+          <strong>{{ ab.ambulance.ambulance_number }}</strong> <span class="status-badge status-{{ ab.status }}">{{ ab.status }}</span><br>
+          <small>Driver: {{ ab.ambulance.driver_name }} • ETA: {{ ab.eta_minutes }}m<br>To: {{ (ab.pickup_address or '')[:60] }}</small>
+        </div>
+        {% endfor %}
+      {% else %}<div class="text-muted small text-center">No active trips.</div>{% endif %}
+      <hr>
+      <h6 class="text-muted">All Ambulances</h6>
+      {% for a in ambulances %}
+      <div class="d-flex justify-content-between py-1">
+        <small>{{ a.ambulance_number }}</small><span class="status-badge status-{{ a.status }}">{{ a.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<script>
+  const map = L.map('map').setView([{{ hospital.latitude }}, {{ hospital.longitude }}], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+  L.marker([{{ hospital.latitude }}, {{ hospital.longitude }}]).addTo(map).bindPopup('<b>{{ hospital.hospital_name }}</b>');
+  {% for a in ambulances %}
+  L.marker([{{ a.latitude }}, {{ a.longitude }}], {
+    icon: L.divIcon({html: '<div style="background:#dc3545;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);"><i class="bi bi-truck"></i></div>', className: 'amb-mk', iconSize:[36,36]})
+  }).addTo(map).bindPopup('<b>{{ a.ambulance_number }}</b><br>Status: {{ a.status }}<br>Driver: {{ a.driver_name }}');
+  {% endfor %}
+  // Auto-refresh every 10 seconds (reload page)
+  setTimeout(() => window.location.reload(), 30000);
+</script>
+{% endblock %}

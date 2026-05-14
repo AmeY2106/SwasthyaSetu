@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Emergency Help — {{ APP_NAME }}{% endblock %}
+{% block public_content %}
+<nav class="navbar navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}"><i class="bi bi-heart-pulse-fill text-primary"></i> {{ APP_NAME }}</a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-person"></i> Login</a>
+  </div>
+</nav>
+
+<div class="container py-5">
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="emergency-card fade-in-up">
+        <div class="pulse-icon mb-2"><i class="bi bi-exclamation-octagon-fill"></i></div>
+        <h2 class="fw-bold">Request Emergency Help</h2>
+        <p>Fill in the form below. No login required. Our team will dispatch the nearest ambulance/ICU.</p>
+        <form method="post" class="row g-3 mt-2">
+          <div class="col-md-6"><label class="form-label text-white">Full Name *</label><input class="form-control" name="patient_name" required></div>
+          <div class="col-md-6"><label class="form-label text-white">Phone *</label><input class="form-control" name="patient_phone" required></div>
+          <div class="col-md-6"><label class="form-label text-white">Email (optional)</label><input class="form-control" type="email" name="patient_email"></div>
+          <div class="col-md-6"><label class="form-label text-white">Emergency Type *</label>
+            <select class="form-select" name="alert_type" required>
+              <option value="ambulance">🚑 Ambulance</option>
+              <option value="icu">🛏️ ICU Bed</option>
+              <option value="general">⚕️ General Emergency</option>
+            </select>
+          </div>
+          <div class="col-12"><label class="form-label text-white">Address / Pickup Location *</label><textarea class="form-control" name="patient_address" rows="2" required></textarea></div>
+          <div class="col-12"><label class="form-label text-white">Preferred Hospital (optional)</label>
+            <select class="form-select" name="hospital_id">
+              <option value="">-- Any nearby hospital --</option>
+              {% for h in hospitals %}<option value="{{ h.id }}">{{ h.hospital_name }} — {{ h.district.name if h.district else '' }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-light btn-lg fw-bold w-100"><i class="bi bi-exclamation-octagon"></i> Send Emergency Alert</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card-soft">
+        <h4 class="section-title">Nearest Hospitals (Demo)</h4>
+        <div id="map" style="height:230px; margin-bottom:14px;"></div>
+        <div style="max-height:300px;overflow-y:auto;">
+          {% for h in hospitals[:10] %}
+          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div>
+              <strong>{{ h.hospital_name }}</strong><br>
+              <small class="text-muted">{{ h.district.name if h.district else '' }} — ☎ {{ h.contact_number }}</small><br>
+              <small><span class="status-badge status-on_route">{{ h.available_emergency_beds }} Emerg</span> <span class="status-badge status-booked">{{ h.available_icu_beds }} ICU</span></small>
+            </div>
+            <a class="btn btn-soft btn-sm" href="{{ url_for('hospital_detail', hospital_id=h.id) }}">View</a>
+          </div>
+          {% else %}<em class="text-muted">No hospitals listed yet.</em>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const map = L.map('map').setView([19.0760, 72.8777], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+  {% for h in hospitals %}
+  L.marker([{{ h.latitude or 19.0760 }}, {{ h.longitude or 72.8777 }}]).addTo(map).bindPopup('<b>{{ h.hospital_name }}</b>');
+  {% endfor %}
+</script>
+{% endblock %}
