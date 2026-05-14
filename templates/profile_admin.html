@@ -1,24 +1,14 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6" data-aos="fade-up">
-        <div class="card">
-            <div class="card-header bg-dark text-white fw-bold">
-                <i class="fas fa-user-shield me-2"></i>Admin Profile
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong><i class="fas fa-envelope me-2"></i>Email:</strong> <span class="gradient-text">{{ current_user.email }}</span>
-                </div>
-                <div class="mb-3">
-                    <strong><i class="fas fa-user-tag me-2"></i>Role:</strong> {{ current_user.role }}
-                </div>
-                <div class="mb-3">
-                    <strong><i class="fas fa-calendar-alt me-2"></i>Joined:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}
-                </div>
-                <a href="{{ url_for('change_password') }}" class="btn btn-secondary rounded-pill"><i class="fas fa-key me-2"></i>Change Password</a>
-            </div>
-        </div>
+  <div class="col-md-6">
+    <div class="card-soft text-center">
+      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#0a7c6b,#0d6efd);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:16px;"><i class="bi bi-shield-check"></i></div>
+      <h3>Administrator</h3>
+      <p class="text-muted">{{ user.email }}</p>
+      <p><small class="text-muted">Member since {{ user.created_at.strftime('%Y-%m-%d') }}</small></p>
+      <a href="{{ url_for('change_password') }}" class="btn btn-primary">Change Password</a>
     </div>
+  </div>
 </div>
 {% endblock %}

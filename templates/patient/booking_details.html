@@ -1,26 +1,74 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-info text-white">Booking Details</div>
-            <div class="card-body">
-                <p><strong>Booking ID:</strong> {{ booking.booking_id }}</p>
-                <p><strong>Hospital:</strong> {{ booking.hospital.hospital_name }}</p>
-                <p><strong>Patient Name:</strong> {{ booking.patient_name }}</p>
-                <p><strong>Selected Beds:</strong></p>
-                <ul>
-                    {% for bed in beds %}
-                    <li>Bed {{ bed.bed_number }} ({{ bed.bed_type }}) - {{ bed.ward_name or 'General' }}</li>
-                    {% endfor %}
-                </ul>
-                <p><strong>Reason:</strong> {{ booking.reason }}</p>
-                <p><strong>Treatment:</strong> {{ booking.treatment_needed }}</p>
-                <p><strong>Status:</strong> <span class="badge bg-{{ 'success' if booking.status=='confirmed' else 'warning' }}">{{ booking.status }}</span></p>
-                <p><strong>Booked on:</strong> {{ booking.booking_date.strftime('%Y-%m-%d %H:%M') }}</p>
-                <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary">Back</a>
-            </div>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card-soft">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <h3 class="mb-1">Booking Confirmation</h3>
+          <div class="text-muted"><code>{{ booking.booking_id }}</code></div>
         </div>
+        <div>
+          <span class="status-badge status-{{ booking.status }}" style="font-size:1rem;">{{ booking.status.upper() }}</span>
+        </div>
+      </div>
+      <hr>
+      <div class="row g-2">
+        <div class="col-md-6"><b>Patient:</b> {{ booking.patient_name }}</div>
+        <div class="col-md-6"><b>Phone:</b> {{ booking.patient_phone }}</div>
+        <div class="col-md-6"><b>Email:</b> {{ booking.patient_email }}</div>
+        <div class="col-md-6"><b>Hospital:</b> {{ booking.hospital.hospital_name }}</div>
+        <div class="col-md-6"><b>Address:</b> {{ booking.hospital.address }}</div>
+        <div class="col-md-6"><b>Contact:</b> {{ booking.hospital.contact_number }}</div>
+        <div class="col-md-6"><b>Booking Date:</b> {{ booking.booking_date.strftime('%Y-%m-%d %H:%M') }}</div>
+        <div class="col-md-6"><b>Admission:</b> {{ booking.expected_admission_date.strftime('%Y-%m-%d %H:%M') if booking.expected_admission_date else 'ASAP' }}</div>
+        <div class="col-12"><b>Reason:</b> {{ booking.reason }}</div>
+        <div class="col-12"><b>Treatment Needed:</b> {{ booking.treatment_needed }}</div>
+      </div>
+      <hr>
+      <h5>Beds Allocated</h5>
+      <ul>{% for bed in beds %}<li><strong>Bed {{ bed.bed_number }}</strong> ({{ bed.bed_type.upper() }}) — {{ bed.ward_name or 'General Ward' }}, Floor {{ bed.floor or '—' }}</li>{% endfor %}</ul>
+      {% if booking.booking_services %}
+      <h5>Services Requested</h5>
+      <div>{% for bs in booking.booking_services %}<span class="service-badge"><i class="bi bi-check-circle"></i> {{ bs.service_name }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if booking.ambulance_booking %}
+      <hr>
+      <h5><i class="fa-solid fa-truck-medical text-danger"></i> Ambulance Assigned</h5>
+      <div class="row g-2">
+        <div class="col-md-6"><b>Ambulance #:</b> {{ booking.ambulance_booking.ambulance.ambulance_number }}</div>
+        <div class="col-md-6"><b>Driver:</b> {{ booking.ambulance_booking.ambulance.driver_name }}</div>
+        <div class="col-md-6"><b>Phone:</b> <a href="tel:{{ booking.ambulance_booking.ambulance.driver_phone }}">{{ booking.ambulance_booking.ambulance.driver_phone }}</a></div>
+        <div class="col-md-6"><b>ETA:</b> {{ booking.ambulance_booking.eta_minutes }} mins</div>
+        <div class="col-md-6"><b>Status:</b> <span class="status-badge status-{{ booking.ambulance_booking.status }}">{{ booking.ambulance_booking.status }}</span></div>
+        <div class="col-md-6"><a href="{{ url_for('track_ambulance', ambulance_booking_id=booking.ambulance_booking.id) }}" class="btn btn-emergency btn-sm"><i class="bi bi-geo-alt-fill"></i> Track Live</a></div>
+      </div>
+      {% endif %}
+      <div class="mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-soft"><i class="bi bi-printer"></i> Print</button>
+        <a href="{{ url_for('patient_dashboard') }}" class="btn btn-soft"><i class="bi bi-arrow-left"></i> Dashboard</a>
+      </div>
     </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="qr-card">
+      <h5 class="mb-2"><i class="bi bi-qr-code"></i> Show this QR at admission desk</h5>
+      <div id="qrcode"></div>
+      <small class="text-muted d-block mt-2">Booking ID: <br><code>{{ booking.booking_id }}</code></small>
+    </div>
+  </div>
 </div>
+
+<script>
+  const qrData = JSON.stringify({
+    booking_id: "{{ booking.booking_id }}",
+    patient: "{{ booking.patient_name }}",
+    phone: "{{ booking.patient_phone }}",
+    hospital: "{{ booking.hospital.hospital_name }}",
+    beds: {{ beds|length }},
+    status: "{{ booking.status }}"
+  });
+  new QRCode(document.getElementById('qrcode'), { text: qrData, width: 200, height: 200, colorDark: '#1a2340', colorLight: '#fff' });
+</script>
 {% endblock %}

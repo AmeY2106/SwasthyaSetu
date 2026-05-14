@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">Manage Ambulances (Demo Control Panel)</h2>
+<p class="text-muted">As admin you can manually simulate ambulance movement: update latitude, longitude, status, and ETA for any ambulance to simulate real-time tracking.</p>
+<div class="card-soft">
+  <div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>Ambulance</th><th>Hospital</th><th>Driver</th><th>Coords</th><th>Status</th><th>Update (Demo)</th></tr></thead>
+    <tbody>
+      {% for a in ambulances %}
+      <tr>
+        <td><strong>{{ a.ambulance_number }}</strong></td>
+        <td>{{ a.hospital.hospital_name }}</td>
+        <td>{{ a.driver_name }}<br><small class="text-muted">{{ a.driver_phone }}</small></td>
+        <td><small>{{ '%.5f'|format(a.latitude) }}, {{ '%.5f'|format(a.longitude) }}</small></td>
+        <td><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
+        <td>
+          <form method="post" action="{{ url_for('admin_update_ambulance', ambulance_id=a.id) }}" class="row g-1">
+            <div class="col-6"><input class="form-control form-control-sm" name="latitude" value="{{ a.latitude }}" placeholder="Lat" step="any"></div>
+            <div class="col-6"><input class="form-control form-control-sm" name="longitude" value="{{ a.longitude }}" placeholder="Lng" step="any"></div>
+            <div class="col-6">
+              <select class="form-select form-select-sm" name="status">
+                <option value="available" {% if a.status=='available' %}selected{% endif %}>Available</option>
+                <option value="assigned" {% if a.status=='assigned' %}selected{% endif %}>Assigned</option>
+                <option value="on_route" {% if a.status=='on_route' %}selected{% endif %}>On Route</option>
+                <option value="reached" {% if a.status=='reached' %}selected{% endif %}>Reached</option>
+              </select>
+            </div>
+            <div class="col-6"><input class="form-control form-control-sm" name="eta_minutes" placeholder="ETA (min)" type="number"></div>
+            <div class="col-12 d-grid"><button class="btn btn-sm btn-primary">Update</button></div>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="6" class="text-center text-muted">No ambulances.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

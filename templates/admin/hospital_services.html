@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">Hospital Services Management</h2>
+<p class="text-muted">Update which of the 15 standard services each hospital offers.</p>
+{% for h in hospitals %}
+<div class="card-soft mb-3">
+  <div class="d-flex justify-content-between flex-wrap align-items-center">
+    <div><h5 class="mb-1">{{ h.hospital_name }}</h5><small class="text-muted">{{ h.district.name if h.district else '' }} • {{ h.user.email }}</small></div>
+    <div><span class="badge bg-primary">{{ h.services|length }} services active</span></div>
+  </div>
+  <form method="post" class="mt-3">
+    <input type="hidden" name="hospital_id" value="{{ h.id }}">
+    <div class="row g-2">
+      {% set active = h.service_names %}
+      {% for s in HOSPITAL_SERVICES %}
+      <div class="col-md-3 col-6">
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="services" value="{{ s }}" id="h{{ h.id }}s{{ loop.index }}" {% if s in active %}checked{% endif %}><label class="form-check-label small" for="h{{ h.id }}s{{ loop.index }}">{{ s }}</label></div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary btn-sm mt-3"><i class="bi bi-check"></i> Save Services</button>
+  </form>
+</div>
+{% else %}<div class="empty-state card-soft"><i class="bi bi-clipboard-x"></i><p>No approved hospitals.</p></div>{% endfor %}
+{% endblock %}

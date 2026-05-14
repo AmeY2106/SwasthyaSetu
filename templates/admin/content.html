@@ -1,17 +1,15 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<h2 class="mb-4">Edit Website Content (CMS)</h2>
-<form method="POST">
-    {% for content, form in forms.items() %}
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">{{ content.key }}</h5>
-            <p class="text-muted">{{ content.description or '' }}</p>
-            {{ form.hidden_tag() }}
-            {{ form.value(class="form-control", rows=3) }}
-            {{ form.submit(class="btn btn-sm btn-primary mt-2") }}
-        </div>
+<h2 class="section-title">Site Content</h2>
+<div class="card-soft">
+  <form method="post">
+    {% for c in contents %}
+    <div class="mb-3">
+      <label class="form-label"><code>{{ c.key }}</code> <small class="text-muted">{{ c.description or '' }}</small></label>
+      <textarea name="value_{{ c.id }}" class="form-control" rows="2">{{ c.value }}</textarea>
     </div>
     {% endfor %}
-</form>
+    <button class="btn btn-primary">Save All</button>
+  </form>
+</div>
 {% endblock %}

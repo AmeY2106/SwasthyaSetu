@@ -1,118 +1,174 @@
-{% extends "layout.html" %}
-{% block content %}
-<!-- Hero Banner -->
-<div class="hero-section text-center" data-aos="fade-down">
-    <div class="container">
-        <h1 class="text-white display-4 fw-bold">{{ site_content.get('home_hero_title', 'Welcome to Smart Healthcare') }}</h1>
-        <p class="text-white lead fs-4">{{ site_content.get('home_hero_subtitle', 'Book hospital beds instantly across India') }}</p>
-        <div class="alert alert-warning d-inline-block mt-3">{{ site_content.get('home_emergency_text', '🚨 For emergencies call 108') }}</div>
+{% extends 'base.html' %}
+{% block title %}{{ APP_NAME }} — {{ APP_TAGLINE }}{% endblock %}
+{% block public_content %}
+<!-- Public top navbar -->
+<nav class="navbar navbar-expand-lg sticky-top" style="background:white;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+      <span class="brand-icon" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0a7c6b,#0d6efd);color:white;display:inline-flex;align-items:center;justify-content:center;"><i class="bi bi-heart-pulse-fill"></i></span>
+      <span><strong style="color:#1a2340;">{{ APP_NAME }}</strong><br><small class="text-muted" style="font-size:.65rem;">{{ APP_TAGLINE }}</small></span>
+    </a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <li class="nav-item"><a class="nav-link" href="#hospitals">Hospitals</a></li>
+        <li class="nav-item"><a class="nav-link" href="#how">How It Works</a></li>
+        <li class="nav-item"><a class="btn btn-emergency" href="{{ url_for('emergency_page') }}"><i class="bi bi-exclamation-octagon"></i> Emergency</a></li>
+        <li class="nav-item"><a class="btn btn-outline-primary rounded-pill px-3" href="{{ url_for('login') }}">Login</a></li>
+        <li class="nav-item"><a class="btn btn-primary" href="{{ url_for('register_patient') }}">Sign Up</a></li>
+      </ul>
     </div>
-</div>
+  </div>
+</nav>
 
-<div class="row">
-    <!-- Sidebar Filters -->
-    <div class="col-md-3 mb-4">
-        <div class="card sticky-top" style="top: 100px;" data-aos="fade-right">
-            <div class="card-header bg-primary text-white rounded-top-4 fw-bold">🔍 Filter Hospitals</div>
-            <div class="card-body">
-                <form method="GET">
-                    <label class="form-label fw-bold"><i class="fas fa-map-marker-alt me-1"></i>State</label>
-                    <select name="state" class="form-select rounded-pill mb-3" onchange="this.form.submit()">
-                        <option value="">All States</option>
-                        {% for s in states %}
-                        <option value="{{ s.id }}" {% if selected_state == s.id %}selected{% endif %}>{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary w-100 rounded-pill">Clear Filters</a>
-                </form>
-                <hr>
-                <div class="text-center">
-                    <i class="fas fa-ambulance fa-3x text-info mb-2"></i>
-                    <p class="small">Emergency beds available 24/7</p>
-                </div>
-            </div>
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-7 fade-in-up">
+        <div class="mb-3"><span class="brand-pulse"></span><span style="color:#ffe;letter-spacing:1px;font-size:.8rem;">LIVE • REAL-TIME • 24×7</span></div>
+        <h1>{{ site_content.get('home_hero_title', APP_NAME) }}</h1>
+        <p class="lead">{{ site_content.get('home_hero_subtitle', APP_TAGLINE) }}</p>
+        <div class="d-flex gap-2 flex-wrap mt-4">
+          <a class="btn btn-light btn-lg rounded-pill px-4 fw-semibold" href="#hospitals"><i class="bi bi-search"></i> Find Hospital</a>
+          <a class="btn btn-emergency btn-lg" href="{{ url_for('emergency_page') }}"><i class="bi bi-exclamation-octagon"></i> Emergency Ambulance</a>
         </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block text-center">
+        <div style="font-size:11rem;opacity:.18;text-align:center;"><i class="bi bi-heart-pulse-fill"></i></div>
+      </div>
     </div>
+  </div>
+</section>
 
-    <!-- Hospital Cards -->
-    <div class="col-md-9">
-        {% if hospitals %}
-            <div class="row">
-                {% for h in hospitals %}
-                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 50 }}">
-                    <div class="card hospital-card h-100 border-0 shadow-sm">
-                        {% if h.hospital_image %}
-                        <img src="{{ url_for('hospital_logo', filename=h.hospital_image) }}" class="card-img-top" style="height: 180px; object-fit: cover; border-radius: 24px 24px 0 0;">
-                        {% endif %}
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <h5 class="card-title">{{ h.hospital_name }}</h5>
-                                <span class="badge bg-primary rounded-pill">⭐ {{ h.rating or '4.8' }}</span>
-                            </div>
-                            <p class="card-text text-muted small"><i class="fas fa-map-pin me-1"></i>{{ h.address[:80] }}...</p>
-                            <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
-                                <span class="badge bg-success badge-bed"><i class="fas fa-bed"></i> Normal: {{ h.available_normal_beds }}/{{ h.total_normal_beds }}</span>
-                                <span class="badge bg-danger badge-bed"><i class="fas fa-ambulance"></i> Emergency: {{ h.available_emergency_beds }}/{{ h.total_emergency_beds }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small><i class="fas fa-phone-alt"></i> {{ h.contact_number }}</small>
-                                <a href="{{ url_for('hospital_detail', hospital_id=h.id) }}" class="btn btn-sm btn-primary rounded-pill">View & Book</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="alert alert-warning text-center">🚫 No approved hospitals found in this region.</div>
-        {% endif %}
-    </div>
-</div>
+<!-- Stats -->
+<section class="container my-5">
+  <div class="row g-3">
+    <div class="col-md-3 col-6"><div class="stat-card bg-grad-1"><i class="icon bi bi-hospital"></i><div class="label">Hospitals</div><div class="value" data-counter="{{ stats.hospitals }}">0</div></div></div>
+    <div class="col-md-3 col-6"><div class="stat-card bg-grad-2"><i class="icon fa-solid fa-bed"></i><div class="label">Beds Available</div><div class="value" data-counter="{{ stats.beds_available }}">0</div></div></div>
+    <div class="col-md-3 col-6"><div class="stat-card bg-grad-3"><i class="icon fa-solid fa-truck-medical"></i><div class="label">Ambulances</div><div class="value" data-counter="{{ stats.ambulances }}">0</div></div></div>
+    <div class="col-md-3 col-6"><div class="stat-card bg-grad-5"><i class="icon bi bi-people"></i><div class="label">Patients Served</div><div class="value" data-counter="{{ stats.patients }}">0</div></div></div>
+  </div>
+</section>
 
-<!-- Top Hospitals Section -->
-<div class="mt-5" data-aos="fade-up">
-    <h2 class="text-center mb-4">{{ site_content.get('home_top_hospitals_title', 'Top Rated Hospitals') }}</h2>
-    <div class="row justify-content-center">
-        {% for h in top_hospitals %}
-        <div class="col-md-2 col-6 mb-3 text-center">
-            <div class="card p-3 align-items-center">
-                {% if h.logo_filename %}
-                <img src="{{ url_for('hospital_logo', filename=h.logo_filename) }}" class="rounded-circle" width="70" height="70" style="object-fit: cover;">
-                {% else %}
-                <i class="fas fa-hospital fa-3x text-primary"></i>
-                {% endif %}
-                <small class="mt-2 fw-bold">{{ h.hospital_name[:20] }}</small>
-            </div>
-        </div>
-        {% endfor %}
+<!-- Emergency Quick Panel -->
+<section class="container my-5">
+  <div class="row g-4 align-items-stretch">
+    <div class="col-md-6">
+      <div class="emergency-card h-100">
+        <div class="pulse-icon"><i class="bi bi-exclamation-octagon"></i></div>
+        <h3 class="fw-bold mt-2">Need Help Urgently?</h3>
+        <p class="mb-3">Request an ambulance, ICU bed, or general emergency support — no login required. Our team responds 24×7.</p>
+        <a href="{{ url_for('emergency_page') }}" class="btn btn-light fw-bold rounded-pill px-4">
+          <i class="bi bi-truck"></i> Request Emergency Ambulance
+        </a>
+      </div>
     </div>
-</div>
+    <div class="col-md-6">
+      <div class="card-soft h-100">
+        <h4 class="section-title">🤖 AI Emergency Support FAQ</h4>
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <b>How fast will the ambulance reach me?</b><br><small class="text-muted">Typical ETA: 8–15 mins in urban zones. Track live on map.</small></li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <b>Is ICU available right now?</b><br><small class="text-muted">See live ICU bed counts on each hospital card.</small></li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <b>Can I book without account?</b><br><small class="text-muted">Yes — Emergency form requires no login.</small></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
-<!-- Testimonials -->
-<div class="mt-5" data-aos="fade-up">
-    <h2 class="text-center mb-4">{{ site_content.get('home_testimonials_title', 'What Our Patients Say') }}</h2>
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <div class="card p-4 text-center h-100">
-                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
-                <p>“Quick booking, clean interface. Saved my father's life.”</p>
-                <strong>- Rajesh K.</strong>
-            </div>
+<!-- Search -->
+<section class="container my-5" id="hospitals">
+  <h2 class="section-title">Find a Hospital</h2>
+  <div class="card-soft mb-4">
+    <form method="get" action="{{ url_for('index') }}" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">State</label>
+        <select name="state" class="form-select" id="stateSel">
+          <option value="">All States</option>
+          {% for s in states %}<option value="{{ s.id }}" {% if selected_state == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">District</label>
+        <select name="district" class="form-select" id="distSel">
+          <option value="">All Districts</option>
+          {% for d in districts %}<option value="{{ d.id }}" data-state="{{ d.state_id }}" {% if selected_district == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Service</label>
+        <select name="service" class="form-select">
+          <option value="">All Services</option>
+          {% for s in HOSPITAL_SERVICES %}<option value="{{ s }}" {% if selected_service == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-grid">
+        <button class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-4">
+    {% for h in hospitals %}
+    <div class="col-md-6 col-lg-4">
+      <div class="hospital-card h-100">
+        <div class="hospital-thumb">
+          {% if h.hospital_image %}<img src="{{ url_for('hospital_logo', filename=h.hospital_image) }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}<i class="bi bi-hospital"></i>{% endif %}
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card p-4 text-center h-100">
-                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
-                <p>“Real‑time bed availability is a lifesaver.”</p>
-                <strong>- Sneha M.</strong>
-            </div>
+        <div class="body">
+          <h5 class="mb-1">{{ h.hospital_name }}</h5>
+          <div class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> {{ h.district.name if h.district else '—' }}, {{ h.state_name or '—' }}</div>
+          <div class="rating mb-2"><i class="bi bi-star-fill"></i> {{ '%.1f'|format(h.rating or 0) }} / 5.0</div>
+          <div class="d-flex gap-2 mb-2 flex-wrap">
+            <span class="status-badge status-available">{{ h.available_normal_beds }} Normal</span>
+            <span class="status-badge status-on_route">{{ h.available_emergency_beds }} Emerg</span>
+            <span class="status-badge status-booked">{{ h.available_icu_beds }} ICU</span>
+          </div>
+          <div class="mb-3">
+            {% for s in h.service_names[:4] %}<span class="service-badge">{{ s }}</span>{% endfor %}
+            {% if h.service_names|length > 4 %}<span class="service-badge">+{{ h.service_names|length - 4 }}</span>{% endif %}
+          </div>
+          <a href="{{ url_for('hospital_detail', hospital_id=h.id) }}" class="btn btn-primary w-100">View & Book</a>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card p-4 text-center h-100">
-                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
-                <p>“Excellent platform for emergency admissions.”</p>
-                <strong>- Dr. Anil S.</strong>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
+    {% else %}
+      <div class="col-12"><div class="empty-state card-soft"><i class="bi bi-search"></i><h5>No hospitals found</h5><p>Try changing your filters.</p></div></div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="container my-5" id="how">
+  <h2 class="section-title">How It Works</h2>
+  <div class="row g-4">
+    <div class="col-md-3"><div class="card-soft text-center h-100"><div class="display-4 text-primary"><i class="bi bi-search"></i></div><h6 class="mt-3">1. Search</h6><p class="small text-muted">Find nearby hospitals filtered by service & availability.</p></div></div>
+    <div class="col-md-3"><div class="card-soft text-center h-100"><div class="display-4 text-primary"><i class="fa-solid fa-bed"></i></div><h6 class="mt-3">2. Book Bed</h6><p class="small text-muted">Select bed type (Normal/Emergency/ICU) & request ambulance.</p></div></div>
+    <div class="col-md-3"><div class="card-soft text-center h-100"><div class="display-4 text-danger"><i class="fa-solid fa-truck-medical"></i></div><h6 class="mt-3">3. Track Live</h6><p class="small text-muted">Watch ambulance on map with live ETA.</p></div></div>
+    <div class="col-md-3"><div class="card-soft text-center h-100"><div class="display-4 text-success"><i class="bi bi-qr-code"></i></div><h6 class="mt-3">4. Show QR</h6><p class="small text-muted">Use the QR code at hospital admission desk.</p></div></div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer text-center">
+  <div class="container">
+    <h5 class="fw-bold">{{ APP_NAME }}</h5>
+    <p class="mb-2">{{ APP_TAGLINE }}</p>
+    <p class="small mb-0">{{ APP_COPYRIGHT }}</p>
+  </div>
+</footer>
+
+<script>
+  // District filter by state
+  document.getElementById('stateSel')?.addEventListener('change', e => {
+    const stateId = e.target.value;
+    document.querySelectorAll('#distSel option').forEach(o => {
+      if (!o.value) return;
+      o.hidden = stateId && o.dataset.state !== stateId;
+    });
+    document.getElementById('distSel').value = '';
+  });
+</script>
 {% endblock %}

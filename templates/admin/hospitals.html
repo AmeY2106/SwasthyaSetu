@@ -1,28 +1,25 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">All Hospitals (Approved & Pending)</div>
-    <div class="card-body table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr><th>Name</th><th>Email</th><th>District</th><th>Approved</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-                {% for h in hospitals %}
-                <tr>
-                    <td>{{ h.hospital_name }}</td>
-                    <td>{{ h.user.email }}</td>
-                    <td>{{ h.district.name }}</td>
-                    <td>{% if h.user.is_approved %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-warning">Pending</span>{% endif %}</td>
-                    <td>
-                        <a href="{{ url_for('admin_edit_hospital', hospital_id=h.id) }}" class="btn btn-sm btn-info">Edit</a>
-                        <a href="{{ url_for('admin_delete_hospital', hospital_id=h.id) }}" onclick="return confirm('Delete hospital?')" class="btn btn-sm btn-danger">Delete</a>
-                        <a href="{{ url_for('admin_hospital_bookings', hospital_id=h.id) }}" class="btn btn-sm btn-secondary">View Bookings</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<h2 class="section-title">Manage Hospitals</h2>
+<div class="card-soft">
+  <div class="table-responsive"><table class="table table-hover align-middle">
+    <thead><tr><th>Name</th><th>Email</th><th>District</th><th>Status</th><th>Rating</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for h in hospitals %}
+      <tr>
+        <td><strong>{{ h.hospital_name }}</strong><br><small class="text-muted">{{ h.license_number }}</small></td>
+        <td>{{ h.user.email }}</td>
+        <td>{{ h.district.name if h.district else '—' }}</td>
+        <td><span class="status-badge status-{{ 'confirmed' if h.user.is_approved else 'pending' }}">{{ 'Approved' if h.user.is_approved else 'Pending' }}</span></td>
+        <td>⭐ {{ '%.1f'|format(h.rating or 0) }}</td>
+        <td>
+          <a class="btn btn-sm btn-soft" href="{{ url_for('admin_edit_hospital', hospital_id=h.id) }}"><i class="bi bi-pencil"></i></a>
+          <a class="btn btn-sm btn-soft" href="{{ url_for('hospital_detail', hospital_id=h.id) }}"><i class="bi bi-eye"></i></a>
+          <a class="btn btn-sm btn-danger" href="{{ url_for('admin_delete_hospital', hospital_id=h.id) }}" onclick="return confirm('Delete hospital?')"><i class="bi bi-trash"></i></a>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="6" class="text-center text-muted">No hospitals registered.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
 </div>
 {% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Track Ambulance — {{ APP_NAME }}{% endblock %}
+{% block public_content %}
+<nav class="navbar navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}"><i class="bi bi-heart-pulse-fill text-primary"></i> {{ APP_NAME }}</a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm rounded-pill">Login</a>
+  </div>
+</nav>
+<div class="container py-4">
+  <h3 class="section-title"><i class="fa-solid fa-truck-medical text-danger"></i> Live Ambulance Tracking</h3>
+  <div class="row g-3">
+    <div class="col-lg-8"><div class="card-soft p-2"><div id="map"></div></div></div>
+    <div class="col-lg-4">
+      <div class="tracking-panel">
+        <div class="eta-display">
+          <div class="eta-num"><span id="amb-eta">{{ ambulance_booking.eta_minutes }}</span></div>
+          <div class="eta-label">minutes ETA</div>
+        </div>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value"><span id="amb-status" class="status-badge status-{{ ambulance_booking.status }}">{{ ambulance_booking.status }}</span></span></div>
+        <div class="info-row"><span class="info-label">Ambulance #</span><span class="info-value">{{ ambulance.ambulance_number }}</span></div>
+        <div class="info-row"><span class="info-label">Driver</span><span class="info-value">{{ ambulance.driver_name }}</span></div>
+        <div class="info-row"><span class="info-label">Phone</span><span class="info-value"><a href="tel:{{ ambulance.driver_phone }}">{{ ambulance.driver_phone }}</a></span></div>
+        <div class="info-row"><span class="info-label">Latitude</span><span class="info-value" id="amb-lat">{{ '%.5f'|format(ambulance.latitude) }}</span></div>
+        <div class="info-row"><span class="info-label">Longitude</span><span class="info-value" id="amb-lng">{{ '%.5f'|format(ambulance.longitude) }}</span></div>
+        <div class="info-row"><span class="info-label">Updated</span><span class="info-value" id="amb-updated">just now</span></div>
+        <a href="tel:{{ ambulance.driver_phone }}" class="btn btn-emergency w-100 mt-3"><i class="bi bi-telephone"></i> Call Driver</a>
+      </div>
+      <div class="alert alert-info mt-3 small"><i class="bi bi-info-circle"></i> Map auto-refreshes every 10 seconds. Admin/hospital can update ambulance position via the demo control panel.</div>
+    </div>
+  </div>
+</div>
+<script>
+  initAmbulanceTracker({
+    mapId: 'map',
+    ambulanceId: {{ ambulance.id }},
+    hospitalLat: {{ hospital.latitude or 19.0760 }},
+    hospitalLng: {{ hospital.longitude or 72.8777 }},
+    hospitalName: "{{ hospital.hospital_name }}",
+    patientLat: {{ ambulance_booking.patient_lat or 'null' }},
+    patientLng: {{ ambulance_booking.patient_lng or 'null' }},
+    initialAmbLat: {{ ambulance.latitude or 19.0760 }},
+    initialAmbLng: {{ ambulance.longitude or 72.8777 }},
+  });
+</script>
+{% endblock %}
