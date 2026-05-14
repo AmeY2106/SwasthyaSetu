@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Add New Bed</div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-2">{{ form.bed_number(class="form-control", placeholder="Bed Number (e.g. N-101)") }}</div>
+                    <div class="mb-2">{{ form.bed_type(class="form-select") }}</div>
+                    <div class="mb-2">{{ form.ward_name(class="form-control", placeholder="Ward Name") }}</div>
+                    <div class="mb-2">{{ form.floor(class="form-control", placeholder="Floor") }}</div>
+                    <div class="mb-2">{{ form.status(class="form-select") }}</div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Existing Beds</div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered">
+                    <thead><tr><th>#</th><th>Type</th><th>Ward</th><th>Floor</th><th>Status</th><th>Action</th></thead>
+                    <tbody>
+                        {% for bed in beds %}
+                        <tr>
+                            <td>{{ bed.bed_number }}</td>
+                            <td>{{ bed.bed_type }}</td>
+                            <td>{{ bed.ward_name or '-' }}</td>
+                            <td>{{ bed.floor or '-' }}</td>
+                            <td><span class="badge bg-{{ 'success' if bed.status=='available' else 'danger' }}">{{ bed.status }}</span></td>
+                            <td><a href="{{ url_for('hospital_delete_bed', bed_id=bed.id) }}" onclick="return confirm('Delete bed?')" class="btn btn-sm btn-danger">Delete</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

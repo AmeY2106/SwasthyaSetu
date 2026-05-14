@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header bg-primary text-white fw-bold">
+                <i class="fas fa-user me-2"></i>Patient Profile
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.full_name.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                            {{ form.full_name(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.phone.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-phone"></i></span>
+                            {{ form.phone(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.address.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt"></i></span>
+                            {{ form.address(class="form-control", rows=3) }}
+                        </div>
+                    </div>
+                    {{ form.submit(class="btn btn-primary rounded-pill py-2") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

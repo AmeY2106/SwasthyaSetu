@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white">Booking Details</div>
+            <div class="card-body">
+                <p><strong>Booking ID:</strong> {{ booking.booking_id }}</p>
+                <p><strong>Hospital:</strong> {{ booking.hospital.hospital_name }}</p>
+                <p><strong>Patient Name:</strong> {{ booking.patient_name }}</p>
+                <p><strong>Selected Beds:</strong></p>
+                <ul>
+                    {% for bed in beds %}
+                    <li>Bed {{ bed.bed_number }} ({{ bed.bed_type }}) - {{ bed.ward_name or 'General' }}</li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Reason:</strong> {{ booking.reason }}</p>
+                <p><strong>Treatment:</strong> {{ booking.treatment_needed }}</p>
+                <p><strong>Status:</strong> <span class="badge bg-{{ 'success' if booking.status=='confirmed' else 'warning' }}">{{ booking.status }}</span></p>
+                <p><strong>Booked on:</strong> {{ booking.booking_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

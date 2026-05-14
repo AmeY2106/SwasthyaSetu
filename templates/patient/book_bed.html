@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8" data-aos="fade-up">
+        <div class="glass-card border-danger border-2">
+            <div class="card-header bg-danger text-white text-center">
+                <i class="fas fa-ambulance fa-2x me-2"></i>
+                <h4>AI-Assisted Emergency Bed Booking</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="bookingForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.hospital_id(class="form-control", id="hospital_id") }}
+                        <label for="hospital_id"><i class="fas fa-hospital me-2"></i>Select Hospital</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.patient_name(class="form-control", id="patient_name", placeholder="Full Name") }}
+                        <label for="patient_name"><i class="fas fa-user me-2"></i>Patient Full Name</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.reason(class="form-control", id="reason", rows="3", placeholder="Reason") }}
+                        <label for="reason"><i class="fas fa-stethoscope me-2"></i>Reason for Admission</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.treatment_needed(class="form-control", id="treatment", placeholder="Treatment") }}
+                        <label for="treatment"><i class="fas fa-syringe me-2"></i>Treatment Required</label>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.bed_type(class="form-select", id="bed_type") }}
+                                <label for="bed_type"><i class="fas fa-bed me-2"></i>Bed Type</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.beds_booked(class="form-control", id="beds", placeholder="Number") }}
+                                <label for="beds"><i class="fas fa-hashtag me-2"></i>Number of Beds</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-danger w-100 rounded-pill py-3 mt-2", onclick="return validateForm()") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateForm() {
+        let beds = document.getElementById('beds').value;
+        if(beds < 1) { alert('Please select at least 1 bed.'); return false; }
+        return confirm('Confirm emergency booking?');
+    }
+</script>
+{% endblock %}

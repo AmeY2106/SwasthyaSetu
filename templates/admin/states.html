@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-5 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Add State</div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    {{ form.name(class="form-control mb-2", placeholder="State name") }}
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Existing States</div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for s in states %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ s.name }}
+                        <a href="{{ url_for('delete_state', state_id=s.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block content %}
+<!-- Hero Banner -->
+<div class="hero-section text-center" data-aos="fade-down">
+    <div class="container">
+        <h1 class="text-white display-4 fw-bold">{{ site_content.get('home_hero_title', 'Welcome to Smart Healthcare') }}</h1>
+        <p class="text-white lead fs-4">{{ site_content.get('home_hero_subtitle', 'Book hospital beds instantly across India') }}</p>
+        <div class="alert alert-warning d-inline-block mt-3">{{ site_content.get('home_emergency_text', '🚨 For emergencies call 108') }}</div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sidebar Filters -->
+    <div class="col-md-3 mb-4">
+        <div class="card sticky-top" style="top: 100px;" data-aos="fade-right">
+            <div class="card-header bg-primary text-white rounded-top-4 fw-bold">🔍 Filter Hospitals</div>
+            <div class="card-body">
+                <form method="GET">
+                    <label class="form-label fw-bold"><i class="fas fa-map-marker-alt me-1"></i>State</label>
+                    <select name="state" class="form-select rounded-pill mb-3" onchange="this.form.submit()">
+                        <option value="">All States</option>
+                        {% for s in states %}
+                        <option value="{{ s.id }}" {% if selected_state == s.id %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary w-100 rounded-pill">Clear Filters</a>
+                </form>
+                <hr>
+                <div class="text-center">
+                    <i class="fas fa-ambulance fa-3x text-info mb-2"></i>
+                    <p class="small">Emergency beds available 24/7</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hospital Cards -->
+    <div class="col-md-9">
+        {% if hospitals %}
+            <div class="row">
+                {% for h in hospitals %}
+                <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 50 }}">
+                    <div class="card hospital-card h-100 border-0 shadow-sm">
+                        {% if h.hospital_image %}
+                        <img src="{{ url_for('hospital_logo', filename=h.hospital_image) }}" class="card-img-top" style="height: 180px; object-fit: cover; border-radius: 24px 24px 0 0;">
+                        {% endif %}
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="card-title">{{ h.hospital_name }}</h5>
+                                <span class="badge bg-primary rounded-pill">⭐ {{ h.rating or '4.8' }}</span>
+                            </div>
+                            <p class="card-text text-muted small"><i class="fas fa-map-pin me-1"></i>{{ h.address[:80] }}...</p>
+                            <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                <span class="badge bg-success badge-bed"><i class="fas fa-bed"></i> Normal: {{ h.available_normal_beds }}/{{ h.total_normal_beds }}</span>
+                                <span class="badge bg-danger badge-bed"><i class="fas fa-ambulance"></i> Emergency: {{ h.available_emergency_beds }}/{{ h.total_emergency_beds }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small><i class="fas fa-phone-alt"></i> {{ h.contact_number }}</small>
+                                <a href="{{ url_for('hospital_detail', hospital_id=h.id) }}" class="btn btn-sm btn-primary rounded-pill">View & Book</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center">🚫 No approved hospitals found in this region.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Top Hospitals Section -->
+<div class="mt-5" data-aos="fade-up">
+    <h2 class="text-center mb-4">{{ site_content.get('home_top_hospitals_title', 'Top Rated Hospitals') }}</h2>
+    <div class="row justify-content-center">
+        {% for h in top_hospitals %}
+        <div class="col-md-2 col-6 mb-3 text-center">
+            <div class="card p-3 align-items-center">
+                {% if h.logo_filename %}
+                <img src="{{ url_for('hospital_logo', filename=h.logo_filename) }}" class="rounded-circle" width="70" height="70" style="object-fit: cover;">
+                {% else %}
+                <i class="fas fa-hospital fa-3x text-primary"></i>
+                {% endif %}
+                <small class="mt-2 fw-bold">{{ h.hospital_name[:20] }}</small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Testimonials -->
+<div class="mt-5" data-aos="fade-up">
+    <h2 class="text-center mb-4">{{ site_content.get('home_testimonials_title', 'What Our Patients Say') }}</h2>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card p-4 text-center h-100">
+                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
+                <p>“Quick booking, clean interface. Saved my father's life.”</p>
+                <strong>- Rajesh K.</strong>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card p-4 text-center h-100">
+                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
+                <p>“Real‑time bed availability is a lifesaver.”</p>
+                <strong>- Sneha M.</strong>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card p-4 text-center h-100">
+                <i class="fas fa-quote-left fa-2x text-primary mb-3"></i>
+                <p>“Excellent platform for emergency admissions.”</p>
+                <strong>- Dr. Anil S.</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

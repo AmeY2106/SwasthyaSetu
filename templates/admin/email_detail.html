@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center" data-aos="fade-up">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Email Details</div>
+            <div class="card-body">
+                <p><strong>To:</strong> {{ log.recipient }}</p>
+                <p><strong>Subject:</strong> {{ log.subject }}</p>
+                <p><strong>Sent:</strong> {{ log.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <hr>
+                <div class="border p-3 bg-light" style="max-height: 500px; overflow: auto;">
+                    {{ log.full_html | safe }}
+                </div>
+                <a href="{{ url_for('admin_emails') }}" class="btn btn-secondary mt-3">Back to Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

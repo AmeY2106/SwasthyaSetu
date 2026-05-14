@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h4>{{ hospital.hospital_name }}</h4>
+            </div>
+            <div class="card-body">
+                <p><i class="fas fa-map-marker-alt me-2"></i> {{ hospital.address }}</p>
+                <p><i class="fas fa-phone me-2"></i> {{ hospital.contact_number }}</p>
+                <p>{{ hospital.description or '' }}</p>
+                <div class="mb-3">
+                    <button class="btn btn-outline-secondary filter-bed" data-type="all">All Beds</button>
+                    <button class="btn btn-outline-primary filter-bed" data-type="normal">Normal</button>
+                    <button class="btn btn-outline-danger filter-bed" data-type="emergency">Emergency</button>
+                    <button class="btn btn-outline-info filter-bed" data-type="icu">ICU</button>
+                </div>
+                <div id="beds-grid" class="row g-2"></div>
+                <div class="mt-4">
+                    <h5>Selected Beds: <span id="selected-count">0</span></h5>
+                    <div id="selected-beds-list"></div>
+                    <button class="btn btn-success mt-3" id="proceed-to-book" disabled>Proceed to Book</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card" id="booking-form-container" style="display:none;">
+            <div class="card-header bg-dark text-white">Patient Admission Details</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('book_beds') }}" id="booking-form">
+                    <input type="hidden" name="hospital_id" value="{{ hospital.id }}">
+                    <input type="hidden" name="selected_beds" id="selected_beds_input">
+                    
+                    <div class="mb-2"><input type="text" name="patient_name" placeholder="Full Name *" class="form-control" required></div>
+                    <div class="mb-2"><input type="number" name="patient_age" placeholder="Age *" class="form-control" required></div>
+                    <div class="mb-2">
+                        <select name="patient_gender" class="form-control" required>
+                            <option value="M">Male</option><option value="F">Female</option><option value="O">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-2"><input type="tel" name="patient_phone" placeholder="Phone *" class="form-control" required></div>
+                    <div class="mb-2"><input type="email" name="patient_email" placeholder="Email *" class="form-control" required></div>
+                    <div class="mb-2"><textarea name="patient_address" placeholder="Residential Address" class="form-control"></textarea></div>
+                    <div class="mb-2"><input type="text" name="blood_group" placeholder="Blood Group (e.g. O+)" class="form-control"></div>
+                    <div class="mb-2"><input type="text" name="emergency_contact" placeholder="Emergency Contact No." class="form-control"></div>
+                    <div class="mb-2"><textarea name="reason" placeholder="Reason for Admission *" class="form-control" required></textarea></div>
+                    <div class="mb-2"><input type="text" name="treatment_needed" placeholder="Treatment Required *" class="form-control" required></div>
+                    <div class="mb-2">
+                        <select name="admission_type" class="form-control">
+                            <option value="general">General</option><option value="emergency">Emergency</option><option value="icu">ICU</option>
+                        </select>
+                    </div>
+                    <div class="mb-2"><input type="datetime-local" name="expected_admission_date" class="form-control"></div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill">Confirm Booking</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">Bed Legend</div>
+            <div class="card-body">
+                <p><span class="badge bg-success">🟢 Available</span> <span class="badge bg-secondary">⚪ Booked</span></p>
+                <p><span class="badge bg-warning">🟡 Maintenance</span> <span class="badge bg-danger">🔴 Emergency Reserved</span></p>
+                <p><span class="badge bg-primary">🔵 Selected</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedBeds = new Set();
+
+function loadBeds(type='all') {
+    fetch(`/api/hospital/{{ hospital.id }}/beds?type=${type}`)
+        .then(res => res.json())
+        .then(beds => {
+            const container = document.getElementById('beds-grid');
+            container.innerHTML = '';
+            beds.forEach(bed => {
+                let statusClass = 'btn-secondary';
+                let statusText = '';
+                if (bed.status === 'available') { statusClass = 'btn-success'; statusText = 'Available'; }
+                else if (bed.status === 'booked') { statusClass = 'btn-secondary disabled'; statusText = 'Booked'; }
+                else if (bed.status === 'maintenance') { statusClass = 'btn-warning'; statusText = 'Maintenance'; }
+                else if (bed.status === 'emergency_reserved') { statusClass = 'btn-danger'; statusText = 'Emergency Reserved'; }
+                const selected = selectedBeds.has(bed.id);
+                const col = document.createElement('div');
+                col.className = 'col-auto';
+                col.innerHTML = `<button class="btn ${statusClass} bed-icon ${selected ? 'selected' : ''}" data-id="${bed.id}" data-status="${bed.status}" ${bed.status !== 'available' ? 'disabled' : ''}>
+                                    <i class="fas fa-bed"></i> ${bed.bed_number}<br><small>${bed.bed_type}</small><br><span class="badge bg-light text-dark">${statusText}</span>
+                                </button>`;
+                container.appendChild(col);
+            });
+            attachBedEvents();
+        });
+}
+
+function attachBedEvents() {
+    document.querySelectorAll('.bed-icon:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = parseInt(btn.dataset.id);
+            if (selectedBeds.has(id)) {
+                selectedBeds.delete(id);
+                btn.classList.remove('selected');
+            } else {
+                selectedBeds.add(id);
+                btn.classList.add('selected');
+            }
+            document.getElementById('selected-count').innerText = selectedBeds.size;
+            document.getElementById('selected_beds_input').value = Array.from(selectedBeds).join(',');
+            document.getElementById('proceed-to-book').disabled = selectedBeds.size === 0;
+        });
+    });
+}
+
+document.getElementById('proceed-to-book').addEventListener('click', () => {
+    document.getElementById('booking-form-container').style.display = 'block';
+    document.getElementById('proceed-to-book').style.display = 'none';
+});
+
+document.querySelectorAll('.filter-bed').forEach(btn => {
+    btn.addEventListener('click', () => loadBeds(btn.dataset.type));
+});
+
+loadBeds('all');
+</script>
+{% endblock %}

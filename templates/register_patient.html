@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="fas fa-user-plus me-2"></i>Patient Registration
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-envelope"></i></span>
+                            {{ form.email(class="form-control", placeholder="you@example.com") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.full_name.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                            {{ form.full_name(class="form-control", placeholder="Full Name") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.phone.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-phone"></i></span>
+                            {{ form.phone(class="form-control", placeholder="Phone number") }}
+                        </div>
+                    </div>
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2 fa-lg"></i>
+                        <span>A secure password will be emailed to you.</span>
+                    </div>
+                    {{ form.submit(class="btn btn-success w-100 rounded-pill py-2") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

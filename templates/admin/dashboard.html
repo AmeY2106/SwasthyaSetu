@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-3"><div class="card text-white bg-primary"><div class="card-body"><h3>{{ total_patients }}</h3><p>Patients</p></div></div></div>
+    <div class="col-md-3"><div class="card text-white bg-success"><div class="card-body"><h3>{{ total_hospitals }}</h3><p>Approved Hospitals</p></div></div></div>
+    <div class="col-md-3"><div class="card text-white bg-warning"><div class="card-body"><h3>{{ pending_hospitals }}</h3><p>Pending Approvals</p></div></div></div>
+    <div class="col-md-3"><div class="card text-white bg-info"><div class="card-body"><h3>{{ total_bookings }}</h3><p>Total Bookings</p></div></div></div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card"><div class="card-header bg-dark text-white">Pending Hospital Approvals</div>
+            <div class="card-body">
+                {% for u in pending_hospitals_list %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div><strong>{{ u.hospital_profile.hospital_name }}</strong><br><small>{{ u.email }}</small></div>
+                    <div>
+                        <a href="{{ url_for('handle_pending_hospital', user_id=u.id, action='approve') }}" class="btn btn-sm btn-success">Approve</a>
+                        <a href="{{ url_for('handle_pending_hospital', user_id=u.id, action='reject') }}" class="btn btn-sm btn-danger">Reject</a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted">No pending registrations.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card"><div class="card-header bg-dark text-white">Quick Links</div>
+            <div class="card-body">
+                <a href="{{ url_for('admin_settings') }}" class="btn btn-outline-primary w-100 mb-2">Site Settings</a>
+                <a href="{{ url_for('admin_content') }}" class="btn btn-outline-info w-100 mb-2">Edit Website Content</a>
+                <a href="{{ url_for('manage_states') }}" class="btn btn-outline-secondary w-100 mb-2">Manage States/Districts</a>
+                <a href="{{ url_for('admin_emails') }}" class="btn btn-outline-dark w-100">Email Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">Bookings Trend (Last 7 Days)</div>
+            <div class="card-body">
+                <canvas id="bookingsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const ctx = document.getElementById('bookingsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{
+                label: 'Bookings',
+                data: {{ chart_data|tojson }},
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78,115,223,0.1)',
+                fill: true
+            }]
+        }
+    });
+</script>
+{% endblock %}

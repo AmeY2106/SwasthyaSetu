@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-chart-line me-2"></i>{{ hospital.hospital_name }} – Bed Analytics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="stat-card text-center p-3 border rounded">
+                            <i class="fas fa-bed fa-2x text-primary"></i>
+                            <h3>{{ available_beds }}/{{ total_beds }}</h3>
+                            <p>Available Beds</p>
+                            <div class="progress"><div class="progress-bar bg-success" style="width: {{ (available_beds / total_beds * 100) if total_beds else 0 }}%"></div></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card text-center p-3 border rounded">
+                            <i class="fas fa-procedures fa-2x text-danger"></i>
+                            <h3>{{ occupied_beds }}/{{ total_beds }}</h3>
+                            <p>Occupied Beds</p>
+                            <div class="progress"><div class="progress-bar bg-danger" style="width: {{ (occupied_beds / total_beds * 100) if total_beds else 0 }}%"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ url_for('hospital_beds') }}" class="btn btn-primary mb-4"><i class="fas fa-edit me-2"></i>Manage Beds (Add/Edit/Delete)</a>
+                <h5>Recent Bookings</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead><tr><th>Booking ID</th><th>Patient</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>
+                            {% for b in recent_bookings %}
+                            <tr>
+                                <td>{{ b.booking_id[:8] }}</td>
+                                <td>{{ b.patient_name }}</td>
+                                <td><span class="badge bg-{{ 'success' if b.status=='confirmed' else 'warning' }}">{{ b.status }}</span></td>
+                                <td><a href="{{ url_for('hospital_bookings') }}" class="btn btn-sm btn-info">Manage</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <canvas id="bookingsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Hospital Info</div>
+            <div class="card-body">
+                <p><i class="fas fa-map-marker-alt"></i> {{ hospital.address }}</p>
+                <p><i class="fas fa-phone"></i> {{ hospital.contact_number }}</p>
+                <p><i class="fas fa-calendar"></i> Registered: {{ hospital.created_at.strftime('%Y-%m-%d') }}</p>
+                <hr>
+                <div class="alert alert-info">📢 Update bed inventory from "Manage Beds" page to reflect real-time availability.</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const ctx = document.getElementById('bookingsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{
+                label: 'Bookings per day',
+                data: {{ chart_data|tojson }},
+                backgroundColor: '#36b9cc'
+            }]
+        }
+    });
+</script>
+{% endblock %}

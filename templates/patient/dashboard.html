@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-header bg-primary text-white">My Profile</div>
+            <div class="card-body">
+                <i class="fas fa-user-circle fa-4x mb-2"></i>
+                <h4>{{ patient.full_name }}</h4>
+                <p><span class="badge bg-secondary">ID: {{ current_user.unique_id or 'N/A' }}</span></p>
+                <p><i class="fas fa-envelope"></i> {{ current_user.email }}</p>
+                <p><i class="fas fa-phone"></i> {{ patient.phone }}</p>
+                <a href="{{ url_for('profile') }}" class="btn btn-outline-primary btn-sm">Edit Profile</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">My Bookings</div>
+            <div class="card-body">
+                {% if bookings %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead><tr><th>Booking ID</th><th>Hospital</th><th>Beds</th><th>Status</th><th>Date</th><th>Details</th></tr></thead>
+                        <tbody>
+                            {% for b in bookings %}
+                            <tr>
+                                <td>{{ b.booking_id[:8] }}</td>
+                                <td>{{ b.hospital.hospital_name }}</td>
+                                <td>{% for bb in b.booked_beds %}{{ bb.bed.bed_number }} ({{ bb.bed.bed_type }})<br>{% endfor %}</td>
+                                <td><span class="badge bg-{{ 'success' if b.status=='confirmed' else 'warning' if b.status=='pending' else 'secondary' }}">{{ b.status }}</span></td>
+                                <td>{{ b.booking_date.strftime('%Y-%m-%d') }}</td>
+                                <td><a href="{{ url_for('patient_booking_details', booking_id=b.booking_id) }}" class="btn btn-sm btn-info">View</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">No bookings yet. <a href="{{ url_for('index') }}">Browse hospitals</a> to book a bed.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

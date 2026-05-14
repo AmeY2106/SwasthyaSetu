@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-4" data-aos="fade-right">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Patient Information</div>
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ patient.unique_id }}</p>
+                <p><strong>Name:</strong> {{ patient.patient_profile.full_name }}</p>
+                <p><strong>Email:</strong> {{ patient.email }}</p>
+                <p><strong>Phone:</strong> {{ patient.patient_profile.phone }}</p>
+                <p><strong>Address:</strong> {{ patient.patient_profile.address or 'Not provided' }}</p>
+                <p><strong>Joined:</strong> {{ patient.created_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8" data-aos="fade-left">
+        <div class="card">
+            <div class="card-header bg-info text-white">Booking History</div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered">
+                    <thead><tr><th>Booking ID</th><th>Hospital</th><th>Bed Type</th><th>Reason</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody>{% for b in bookings %}起步<td>{{ b.booking_id[:8] }}..</td><td>{{ b.hospital.hospital_name }}</td><td>{{ b.bed_type }}</td><td>{{ b.reason[:30] }}..</td><td><span class="badge bg-secondary">{{ b.status }}</span></td><td>{{ b.booking_date.strftime('%Y-%m-%d') }}</td></tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

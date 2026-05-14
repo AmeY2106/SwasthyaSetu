@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Edit Website Content (CMS)</h2>
+<form method="POST">
+    {% for content, form in forms.items() %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ content.key }}</h5>
+            <p class="text-muted">{{ content.description or '' }}</p>
+            {{ form.hidden_tag() }}
+            {{ form.value(class="form-control", rows=3) }}
+            {{ form.submit(class="btn btn-sm btn-primary mt-2") }}
+        </div>
+    </div>
+    {% endfor %}
+</form>
+{% endblock %}

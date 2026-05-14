@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header bg-primary text-white fw-bold">
+                <i class="fas fa-cog me-2"></i>Website Settings
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.site_name.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-globe"></i></span>
+                            {{ form.site_name(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.logo.label(class="form-label fw-bold") }}
+                        {{ form.logo(class="form-control") }}
+                        {% if settings.logo_filename and settings.logo_filename != 'default-logo.png' %}
+                        <div class="mt-3 text-center">
+                            <img src="{{ url_for('uploaded_file', filename=settings.logo_filename) }}" width="120" class="img-thumbnail rounded-circle shadow">
+                            <p class="text-muted small mt-1">Current logo</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary rounded-pill py-2 w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

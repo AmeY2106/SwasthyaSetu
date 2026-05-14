@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card" data-aos="fade-up">
+    <div class="card-header bg-dark text-white fw-bold">
+        <i class="fas fa-envelope-open-text me-2"></i>Email Logs (SMTP History)
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Recipient</th><th>Subject</th><th>Preview</th><th>Sent At</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.recipient }}</td>
+                    <td>{{ log.subject }}</td>
+                    <td>{{ log.body_preview[:80] }}...</td>
+                    <td>{{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><a href="{{ url_for('admin_email_detail', log_id=log.id) }}" class="btn btn-sm btn-info rounded-pill">View Full</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

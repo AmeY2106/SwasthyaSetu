@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8" data-aos="fade-up">
+        <div class="card">
+            <div class="card-header bg-warning fw-bold">Edit Hospital: {{ hospital.hospital_name }}</div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">{{ form.hospital_name.label(class="form-label") }}{{ form.hospital_name(class="form-control") }}</div>
+                    <div class="mb-3">{{ form.address.label(class="form-label") }}{{ form.address(class="form-control", rows=2) }}</div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">{{ form.contact_number.label(class="form-label") }}{{ form.contact_number(class="form-control") }}</div>
+                        <div class="col-md-6">{{ form.district_id.label(class="form-label") }}{{ form.district_id(class="form-select") }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">{{ form.total_normal_beds.label(class="form-label") }}{{ form.total_normal_beds(class="form-control") }}</div>
+                        <div class="col-md-6">{{ form.total_emergency_beds.label(class="form-label") }}{{ form.total_emergency_beds(class="form-control") }}</div>
+                    </div>
+                    <div class="mb-3">{{ form.description.label(class="form-label") }}{{ form.description(class="form-control", rows=2) }}</div>
+                    {{ form.submit(class="btn btn-primary rounded-pill") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

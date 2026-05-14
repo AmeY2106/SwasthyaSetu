@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="Smart Healthcare – Book hospital beds instantly, find nearby hospitals, emergency priority AI, ambulance tracking, and more.">
+    <title>{{ site_settings.site_name }} | Smart Healthcare</title>
+    <!-- Bootstrap 5 + Icons + AOS + Chart.js -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #0056a7;
+            --primary-dark: #003d80;
+            --secondary: #00a1b0;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fc;
+            --dark: #1e2a3a;
+        }
+        body {
+            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.light-mode {
+            background: #f4f7fc;
+            color: #1e2a3a;
+        }
+        body.dark-mode {
+            background: #121826;
+            color: #eef2ff;
+        }
+        body.dark-mode .card, body.dark-mode .navbar, body.dark-mode .footer {
+            background: #1e2a3a;
+            color: #eef2ff;
+        }
+        body.dark-mode .bg-light, body.dark-mode .bg-white {
+            background-color: #1e2a3a !important;
+        }
+        .navbar {
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            padding: 0.8rem 2rem;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #0056a7, #00a1b0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-link {
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .nav-link:hover {
+            color: var(--primary);
+        }
+        .btn-primary {
+            background: linear-gradient(95deg, #0056a7, #003d80);
+            border: none;
+            border-radius: 50px;
+            padding: 8px 28px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,86,167,0.3);
+        }
+        .card {
+            border: none;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+        }
+        .footer {
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            border-radius: 40px 40px 0 0;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+        .dark-toggle {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin-left: 10px;
+            color: var(--primary);
+        }
+        .flash-messages {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 280px;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #0056a7 0%, #00a1b0 100%);
+            border-radius: 48px;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .hospital-card {
+            transition: all 0.2s;
+        }
+        .badge-bed {
+            font-size: 0.8rem;
+            border-radius: 50px;
+            padding: 5px 12px;
+        }
+        @media (max-width: 768px) {
+            .navbar { padding: 0.5rem 1rem; }
+            .hero-section { padding: 2rem 1rem; }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <!-- Navbar (similar to Fortis but simplified) -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-hospital-user me-2"></i>{{ site_settings.site_name }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_hospitals') }}">Hospitals</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_content') }}">CMS</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_states') }}">Locations</a></li>
+                        {% elif current_user.role == 'hospital' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('hospital_dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('hospital_beds') }}">Manage Beds</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('hospital_bookings') }}">Bookings</a></li>
+                        {% elif current_user.role == 'patient' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient_dashboard') }}">My Dashboard</a></li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> {{ current_user.email[:20] }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('change_password') }}">Change Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Register</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('register_patient') }}">As Patient</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('register_hospital') }}">As Hospital</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_register') }}">As Admin</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <button class="dark-toggle" id="darkModeToggle"><i class="fas fa-moon"></i></button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="container py-4" style="padding-top: 100px !important;">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container text-center">
+            <p class="mb-0">{{ site_content.get('footer_copyright', '© 2025 Smart Healthcare – Emergency Bed Booking Platform') }}</p>
+            <p class="small mt-2">{{ site_content.get('footer_about', 'Connecting patients to hospitals seamlessly.') }}</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ duration: 800, once: true });
+        // Dark mode
+        const toggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            body.classList.add('dark-mode');
+            body.classList.remove('light-mode');
+            toggle.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            body.classList.add('light-mode');
+            toggle.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+        toggle.addEventListener('click', () => {
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                toggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light');
+                toggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

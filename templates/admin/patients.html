@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="glass-card" data-aos="fade-up">
+    <div class="card-header bg-primary text-white">
+        <h5><i class="fas fa-users me-2"></i>Patient Registry</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead>
+                    <tr><th>Unique ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in patients %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ u.unique_id }}</span></td>
+                        <td>{{ u.patient_profile.full_name }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.patient_profile.phone }}</td>
+                        <td>{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td><a href="{{ url_for('admin_patient_detail', patient_id=u.id) }}" class="btn btn-sm btn-info rounded-pill">View Bookings</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
