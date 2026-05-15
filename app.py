@@ -1,7 +1,3 @@
-"""
-SwasthyaSetu - Real-Time Hospital Availability Platform
-Main Flask application file: models, forms, routes, APIs, seed data.
-"""
 import os
 import secrets
 import string
@@ -59,17 +55,25 @@ def create_app():
     default_uri = f"sqlite:///{db_path}"
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', default_uri)
     if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:///') and not app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:////'):
-        # Use absolute path inside instance/ on Windows-safe path
+        
         app.config['SQLALCHEMY_DATABASE_URI'] = default_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True') == 'True'
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER',
-                                                       'SwasthyaSetu Team <noreply@swasthyasetu.com>')
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'healthcaresevaa@gmail.com')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'ongk vpvm phci zssz')
+
+    
+    _username = app.config['MAIL_USERNAME']
+    _default_sender = os.environ.get('MAIL_DEFAULT_SENDER', '')
+    if _username and _username not in _default_sender:
+        _default_sender = f"SwasthyaSetu Team <{_username}>"
+    elif not _default_sender:
+        _default_sender = f"SwasthyaSetu Team <{_username or 'noreply@swasthyasetu.com'}>"
+    app.config['MAIL_DEFAULT_SENDER'] = _default_sender
+    app.config['MAIL_SUPPRESS_SEND'] = False
 
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
     app.config['HOSPITAL_LOGO_FOLDER'] = os.path.join(app.root_path, 'static', 'hospital_logos')
@@ -96,6 +100,17 @@ def create_app():
             db.session.add(settings)
             db.session.commit()
         content = {c.key: c.value for c in SiteContent.query.all()}
+
+        # Sidebar badge: number of unresolved emergency alerts assigned to current hospital
+        hospital_alert_count = 0
+        try:
+            if current_user.is_authenticated and current_user.role == 'hospital' and current_user.hospital_profile:
+                hospital_alert_count = EmergencyAlert.query.filter_by(
+                    hospital_id=current_user.hospital_profile.id
+                ).filter(EmergencyAlert.status != 'resolved').count()
+        except Exception:
+            hospital_alert_count = 0
+
         return dict(
             site_settings=settings,
             site_content=content,
@@ -104,6 +119,7 @@ def create_app():
             APP_COPYRIGHT=APP_COPYRIGHT,
             HOSPITAL_SERVICES=HOSPITAL_SERVICES,
             now=datetime.utcnow(),
+            hospital_alert_count=hospital_alert_count,
         )
 
     return app
@@ -346,7 +362,7 @@ class OTPSession(db.Model):
         return datetime.utcnow() < self.expires_at
 
 
-# ===== NEW: Ambulance + Services + Emergency Alerts =====
+# ===== Ambulance + Services + Emergency Alerts =====
 
 class Ambulance(db.Model):
     __tablename__ = 'ambulances'
@@ -448,16 +464,65 @@ def log_email(recipient, subject, html_content):
 
 
 def send_html_email(to, subject, html_content, text_body=None):
-    """Log first, then attempt send. SMTP errors are silenced (logged to console)."""
-    log_email(to, subject, html_content)
+    """
+    Send an HTML email with full visibility.
+    - Always logs to EmailLog DB (even when SMTP fails).
+    - Skips sending (with warning) if MAIL_USERNAME or MAIL_PASSWORD is empty.
+    - Prints full traceback on SMTP failure so errors are visible during dev.
+    - Includes plain-text fallback for clients that can't render HTML.
+    """
+    # 1. Always log to DB first (so admin can audit every outbound message)
     try:
-        msg = Message(subject, recipients=[to])
+        log_email(to, subject, html_content)
+    except Exception as _log_err:
+        print(f"[Email] WARNING: Failed to log email to DB: {_log_err}")
+
+    # 2. Validate config
+    username = app.config.get('MAIL_USERNAME', '')
+    password = app.config.get('MAIL_PASSWORD', '')
+    if not username or not password:
+        print(f"[Email] SKIPPED -> {to} | '{subject}' | Reason: MAIL_USERNAME or MAIL_PASSWORD is empty in .env (logged in DB only).")
+        return False
+
+    if not to or '@' not in (to or ''):
+        print(f"[Email] SKIPPED | Invalid recipient: '{to}'")
+        return False
+
+    # 3. Build message
+    try:
+        msg = Message(subject=subject, recipients=[to])
         msg.html = html_content
-        if text_body:
-            msg.body = text_body
+        # Always set a plain-text body fallback (strip HTML tags for safety)
+        if not text_body:
+            import re
+            text_body = re.sub(r'<[^>]+>', ' ', html_content or '')
+            text_body = re.sub(r'\s+', ' ', text_body).strip()[:1500]
+        msg.body = text_body
+    except Exception as build_err:
+        print(f"[Email] ERROR building message for {to}: {build_err}")
+        import traceback; traceback.print_exc()
+        return False
+
+    # 4. Try sending
+    try:
         mail.send(msg)
+        print(f"[Email] SENT -> {to} | '{subject}'")
+        return True
     except Exception as e:
-        print(f"[Email] SMTP send skipped/failed (still logged in DB): {e}")
+        print(f"[Email] FAILED to send to {to} | '{subject}' | Error: {e}")
+        import traceback; traceback.print_exc()
+        return False
+
+
+def render_email(template_name, **kwargs):
+    """Render an HTML email template from templates/emails/<template_name>."""
+    from flask import render_template
+    try:
+        return render_template(f'emails/{template_name}', **kwargs)
+    except Exception as e:
+        print(f"[Email] Template '{template_name}' render failed: {e}")
+        # Fallback minimal HTML
+        return f"<p>SwasthyaSetu notification (template error: {e})</p>"
 
 
 def generate_random_password(length=8):
@@ -487,112 +552,39 @@ def _email_wrapper(title, body_html, accent='#0a7c6b'):
 
 
 def render_patient_welcome_email(name, email, password, unique_id):
-    body = f"""
-      <p>Dear <b>{name}</b>,</p>
-      <p>Your patient account on {APP_NAME} has been created. Here are your login details:</p>
-      <ul>
-        <li><b>Patient ID:</b> {unique_id}</li>
-        <li><b>Email:</b> {email}</li>
-        <li><b>Password:</b> {password}</li>
-      </ul>
-      <p>Please change your password after first login.</p>
-    """
-    return _email_wrapper("Welcome to SwasthyaSetu", body, accent='#0d6efd')
+    return render_email('patient_welcome.html', name=name, email=email,
+                        password=password, unique_id=unique_id,
+                        login_url=url_for('login', _external=True))
 
 
 def render_booking_confirmation(booking, hospital, beds, ambulance_info=None):
-    bed_list = "<ul>" + "".join(
-        f"<li>Bed {b.bed_number} ({b.bed_type.upper()}, {b.ward_name or 'General'})</li>" for b in beds
-    ) + "</ul>"
-    amb_block = ""
-    if ambulance_info:
-        amb_block = f"""
-        <h4>Ambulance Assigned</h4>
-        <ul>
-          <li><b>Ambulance Number:</b> {ambulance_info['ambulance_number']}</li>
-          <li><b>Driver:</b> {ambulance_info['driver_name']} ({ambulance_info['driver_phone']})</li>
-          <li><b>ETA:</b> {ambulance_info.get('eta_minutes', '—')} minutes</li>
-        </ul>
-        """
-    body = f"""
-      <p>Dear <b>{booking.patient_name}</b>,</p>
-      <p>Your booking <b>{booking.booking_id}</b> at <b>{hospital.hospital_name}</b> is currently <b>{booking.status.upper()}</b>.</p>
-      <p><b>Selected Beds:</b> {bed_list}</p>
-      <p><b>Reason:</b> {booking.reason}</p>
-      <p><b>Admission Date:</b> {booking.expected_admission_date.strftime('%Y-%m-%d %H:%M') if booking.expected_admission_date else 'ASAP'}</p>
-      {amb_block}
-    """
-    return _email_wrapper("Booking Confirmed", body, accent='#198754')
+    return render_email('booking_confirmation.html', booking=booking,
+                        hospital=hospital, beds=beds, ambulance_info=ambulance_info)
 
 
 def render_hospital_booking_notification(booking, hospital, beds):
-    bed_list = "<ul>" + "".join(
-        f"<li>Bed {b.bed_number} ({b.bed_type})</li>" for b in beds
-    ) + "</ul>"
-    body = f"""
-      <p>A new booking has been received at <b>{hospital.hospital_name}</b>.</p>
-      <ul>
-        <li><b>Booking ID:</b> {booking.booking_id}</li>
-        <li><b>Patient:</b> {booking.patient_name} ({booking.patient_phone})</li>
-        <li><b>Email:</b> {booking.patient_email}</li>
-        <li><b>Reason:</b> {booking.reason}</li>
-        <li><b>Treatment:</b> {booking.treatment_needed}</li>
-      </ul>
-      <p><b>Beds:</b> {bed_list}</p>
-    """
-    return _email_wrapper("New Booking Request", body, accent='#dc3545')
+    return render_email('hospital_booking_notification.html', booking=booking,
+                        hospital=hospital, beds=beds,
+                        dashboard_url=url_for('hospital_bookings', _external=True))
 
 
 def render_ambulance_assigned_email(patient_name, ambulance, eta, tracking_url):
-    body = f"""
-      <p>Dear <b>{patient_name}</b>,</p>
-      <p>An ambulance has been dispatched to your location.</p>
-      <ul>
-        <li><b>Ambulance Number:</b> {ambulance.ambulance_number}</li>
-        <li><b>Driver Name:</b> {ambulance.driver_name}</li>
-        <li><b>Driver Phone:</b> {ambulance.driver_phone}</li>
-        <li><b>Estimated Arrival:</b> {eta} minutes</li>
-      </ul>
-      <p><a href="{tracking_url}" style="background:#dc3545;color:white;padding:10px 24px;border-radius:30px;text-decoration:none;">Track Live</a></p>
-    """
-    return _email_wrapper("Ambulance Dispatched", body, accent='#dc3545')
+    return render_email('ambulance_assigned.html', patient_name=patient_name,
+                        ambulance=ambulance, eta=eta, tracking_url=tracking_url)
 
 
 def render_emergency_alert_email(alert):
-    body = f"""
-      <p>Dear <b>{alert.patient_name}</b>,</p>
-      <p>Your emergency request has been received by the {APP_NAME} team. We are dispatching the nearest available resources.</p>
-      <ul>
-        <li><b>Alert Type:</b> {alert.alert_type.upper()}</li>
-        <li><b>Contact:</b> {alert.patient_phone}</li>
-        <li><b>Address:</b> {alert.patient_address}</li>
-      </ul>
-      <p>Stay calm. Keep your phone reachable. Help is on the way.</p>
-    """
-    return _email_wrapper("Emergency Alert Received", body, accent='#dc3545')
+    return render_email('emergency_confirmation.html', alert=alert)
 
 
 def render_approval_email_hospital(hospital_name, email, unique_id):
-    body = f"""
-      <p>Dear <b>{hospital_name}</b> Team,</p>
-      <p>Your hospital registration on {APP_NAME} has been approved.</p>
-      <ul>
-        <li><b>Hospital ID:</b> {unique_id}</li>
-        <li><b>Email:</b> {email}</li>
-      </ul>
-      <p>You may now log in and manage beds, services, ambulances, and bookings.</p>
-    """
-    return _email_wrapper("Hospital Approved", body, accent='#198754')
+    return render_email('hospital_approved.html', hospital_name=hospital_name,
+                        email=email, unique_id=unique_id,
+                        login_url=url_for('login', _external=True))
 
 
 def render_otp_email(otp):
-    body = f"""
-      <p>Your verification OTP is:</p>
-      <div style="font-size:36px; letter-spacing:8px; background:#f0f4ff; padding:14px 22px;
-                  display:inline-block; border-radius:14px; font-weight:bold; color:#0d6efd;">{otp}</div>
-      <p style="margin-top:14px;">This OTP is valid for 10 minutes.</p>
-    """
-    return _email_wrapper("Email Verification", body, accent='#0d6efd')
+    return render_email('otp_email.html', otp=otp, expires_in=10)
 
 
 # ==================== FORMS ====================
@@ -796,130 +788,9 @@ def emergency_page():
 
 @app.route('/book', methods=['POST'])
 def book_beds():
-    hospital_id = request.form.get('hospital_id', type=int)
-    hospital = HospitalProfile.query.get_or_404(hospital_id)
-    selected_beds_ids = request.form.get('selected_beds', '')
-    if not selected_beds_ids:
-        flash('Please select at least one bed.', 'danger')
-        return redirect(url_for('hospital_detail', hospital_id=hospital_id))
-    try:
-        bed_ids = [int(x) for x in selected_beds_ids.split(',') if x]
-    except ValueError:
-        flash('Invalid bed selection.', 'danger')
-        return redirect(url_for('hospital_detail', hospital_id=hospital_id))
-    beds = Bed.query.filter(Bed.id.in_(bed_ids), Bed.hospital_id == hospital_id,
-                            Bed.status == 'available', Bed.is_active == True).all()
-    if len(beds) != len(bed_ids):
-        flash('Some beds are no longer available.', 'danger')
-        return redirect(url_for('hospital_detail', hospital_id=hospital_id))
-
-    patient_name = request.form.get('patient_name')
-    patient_age = request.form.get('patient_age')
-    patient_gender = request.form.get('patient_gender')
-    patient_phone = request.form.get('patient_phone')
-    patient_email = request.form.get('patient_email')
-    patient_address = request.form.get('patient_address')
-    blood_group = request.form.get('blood_group')
-    emergency_contact = request.form.get('emergency_contact')
-    reason = request.form.get('reason')
-    treatment_needed = request.form.get('treatment_needed')
-    admission_type = request.form.get('admission_type', 'general')
-    expected_date_str = request.form.get('expected_admission_date')
-    needs_ambulance = request.form.get('needs_ambulance') == 'on'
-    pickup_address = request.form.get('pickup_address', '').strip()
-    patient_lat = request.form.get('patient_lat', type=float) or 19.0760
-    patient_lng = request.form.get('patient_lng', type=float) or 72.8777
-    services_requested = request.form.getlist('services')
-
-    if not all([patient_name, patient_age, patient_gender, patient_phone, patient_email, reason, treatment_needed]):
-        flash('Please fill all required fields.', 'danger')
-        return redirect(url_for('hospital_detail', hospital_id=hospital_id))
-
-    patient_user = User.query.filter_by(email=patient_email).first()
-    new_account = False
-    raw_password = None
-    if not patient_user:
-        new_account = True
-        raw_password = generate_random_password()
-        patient_user = User(email=patient_email, role='patient', is_approved=True, is_active=True)
-        patient_user.set_password(raw_password)
-        patient_user.unique_id = patient_user.generate_unique_id()
-        db.session.add(patient_user)
-        db.session.commit()
-        profile = PatientProfile(user_id=patient_user.id, full_name=patient_name,
-                                 phone=patient_phone, address=patient_address,
-                                 blood_group=blood_group, emergency_contact=emergency_contact)
-        db.session.add(profile)
-        db.session.commit()
-
-    expected_date = None
-    if expected_date_str:
-        for fmt in ('%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
-            try:
-                expected_date = datetime.strptime(expected_date_str, fmt)
-                break
-            except ValueError:
-                continue
-
-    booking = Booking(
-        patient_id=patient_user.id, hospital_id=hospital.id,
-        patient_name=patient_name, patient_age=int(patient_age) if patient_age else None,
-        patient_gender=patient_gender, patient_phone=patient_phone,
-        patient_email=patient_email, patient_address=patient_address,
-        blood_group=blood_group, emergency_contact=emergency_contact,
-        reason=reason, treatment_needed=treatment_needed,
-        admission_type=admission_type, expected_admission_date=expected_date,
-        status='pending', needs_ambulance=needs_ambulance,
-    )
-    db.session.add(booking)
-    db.session.commit()
-
-    for bed in beds:
-        bed.status = 'booked'
-        bed.current_booking_id = booking.id
-        db.session.add(bed)
-        db.session.add(BookingBed(booking_id=booking.id, bed_id=bed.id))
-
-    for s in services_requested:
-        if s in HOSPITAL_SERVICES:
-            db.session.add(BookingService(booking_id=booking.id, service_name=s))
-    db.session.commit()
-
-    ambulance_info = None
-    if needs_ambulance:
-        amb = assign_nearest_ambulance(hospital.id)
-        if amb:
-            amb.status = 'assigned'
-            ab = AmbulanceBooking(
-                booking_id=booking.id, ambulance_id=amb.id,
-                patient_lat=patient_lat, patient_lng=patient_lng,
-                pickup_address=pickup_address or patient_address or 'Pickup TBD',
-                eta_minutes=15, status='assigned',
-            )
-            db.session.add(ab)
-            db.session.commit()
-            ambulance_info = {
-                'ambulance_number': amb.ambulance_number,
-                'driver_name': amb.driver_name,
-                'driver_phone': amb.driver_phone,
-                'eta_minutes': ab.eta_minutes,
-            }
-            tracking_url = url_for('track_ambulance', ambulance_booking_id=ab.id, _external=True)
-            send_html_email(patient_user.email, "🚑 Ambulance Dispatched",
-                            render_ambulance_assigned_email(patient_name, amb, ab.eta_minutes, tracking_url))
-
-    if new_account:
-        send_html_email(patient_user.email, "Welcome to SwasthyaSetu",
-                        render_patient_welcome_email(patient_name, patient_user.email, raw_password, patient_user.unique_id))
-    send_html_email(patient_user.email, f"Booking Confirmation - {booking.booking_id}",
-                    render_booking_confirmation(booking, hospital, beds, ambulance_info))
-    send_html_email(hospital.user.email, f"New Booking Request - {booking.booking_id}",
-                    render_hospital_booking_notification(booking, hospital, beds))
-
-    flash(f'Booking successful! Booking ID: {booking.booking_id}', 'success')
-    if current_user.is_authenticated and current_user.role == 'patient':
-        return redirect(url_for('patient_booking_details', booking_id=booking.booking_id))
-    return redirect(url_for('login'))
+    """Public booking endpoint - delegates to shared _process_booking()."""
+    return _process_booking(request, redirect_to='index',
+                            fallback_patient_email=(current_user.email if current_user.is_authenticated else None))
 
 
 # ==================== AUTH ROUTES ====================
@@ -1358,6 +1229,40 @@ def admin_email_detail(log_id):
     return render_template('admin/email_detail.html', log=log)
 
 
+@app.route('/admin/test-email', methods=['GET', 'POST'])
+@login_required
+@role_required('admin')
+def admin_test_email():
+    """BUG 1 FIX: Send a test email to the admin and show the result."""
+    result = None
+    if request.method == 'POST':
+        try:
+            html = render_email('test_email.html',
+                                smtp_server=app.config.get('MAIL_SERVER'),
+                                smtp_port=app.config.get('MAIL_PORT'),
+                                sender=app.config.get('MAIL_DEFAULT_SENDER'),
+                                sent_at=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
+            ok = send_html_email(current_user.email,
+                                 'SwasthyaSetu - SMTP Test Email',
+                                 html)
+            if ok:
+                result = ('success', f'✅ Test email successfully sent to {current_user.email}. Check your inbox (and spam folder).')
+            else:
+                username = app.config.get('MAIL_USERNAME', '')
+                password = app.config.get('MAIL_PASSWORD', '')
+                if not username or not password:
+                    result = ('warning', f'⚠️ Email NOT sent: MAIL_USERNAME / MAIL_PASSWORD is empty in your .env file. The message was logged in DB only.')
+                else:
+                    result = ('danger', f'❌ Failed to send email. Check the terminal/console for the full error traceback. The message was logged in DB.')
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            result = ('danger', f'❌ Unexpected error: {e}')
+    return render_template('admin/test_email.html', result=result,
+                           mail_username=app.config.get('MAIL_USERNAME', ''),
+                           mail_server=app.config.get('MAIL_SERVER', ''),
+                           mail_default_sender=app.config.get('MAIL_DEFAULT_SENDER', ''))
+
+
 @app.route('/admin/ambulances', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
@@ -1455,9 +1360,15 @@ def hospital_dashboard():
         'icu_beds': hospital.total_icu_beds,
         'ambulances': Ambulance.query.filter_by(hospital_id=hospital.id, is_active=True).count(),
         'pending_bookings': Booking.query.filter_by(hospital_id=hospital.id, status='pending').count(),
-        'emergency_cases': EmergencyAlert.query.filter_by(hospital_id=hospital.id, status='open').count(),
+        'emergency_cases': EmergencyAlert.query.filter_by(hospital_id=hospital.id)
+                                              .filter(EmergencyAlert.status != 'resolved').count(),
     }
     recent_bookings = Booking.query.filter_by(hospital_id=hospital.id).order_by(Booking.booking_date.desc()).limit(10).all()
+
+    # BUG 5 FIX: emergency alerts assigned to THIS hospital and not yet resolved
+    emergency_alerts = EmergencyAlert.query.filter_by(hospital_id=hospital.id)\
+        .filter(EmergencyAlert.status != 'resolved')\
+        .order_by(EmergencyAlert.created_at.desc()).all()
 
     bookings_by_day = db.session.query(func.date(Booking.booking_date), func.count(Booking.id))\
         .filter(Booking.hospital_id == hospital.id,
@@ -1475,7 +1386,22 @@ def hospital_dashboard():
     }
     return render_template('hospital/dashboard.html', hospital=hospital, stats=stats,
                            recent_bookings=recent_bookings, chart_labels=labels, chart_data=data,
-                           bed_breakdown=bed_breakdown)
+                           bed_breakdown=bed_breakdown, emergency_alerts=emergency_alerts)
+
+
+@app.route('/hospital/emergency/<int:alert_id>/resolve', methods=['POST', 'GET'])
+@login_required
+@role_required('hospital')
+def hospital_resolve_emergency(alert_id):
+    """BUG 5 FIX: hospital can mark an assigned emergency alert as resolved."""
+    alert = EmergencyAlert.query.get_or_404(alert_id)
+    if alert.hospital_id != current_user.hospital_profile.id:
+        flash('Unauthorized: this emergency was not assigned to your hospital.', 'danger')
+        return redirect(url_for('hospital_dashboard'))
+    alert.status = 'resolved'
+    db.session.commit()
+    flash(f'Emergency alert from {alert.patient_name} marked as resolved.', 'success')
+    return redirect(url_for('hospital_dashboard'))
 
 
 @app.route('/hospital/beds', methods=['GET', 'POST'])
@@ -1637,19 +1563,182 @@ def patient_dashboard():
     return render_template('patient/dashboard.html', patient=patient, bookings=bookings, active_ambulance=active_ambulance)
 
 
-@app.route('/patient/book')
+@app.route('/patient/book', methods=['GET', 'POST'])
 @login_required
 @role_required('patient')
 def patient_book_bed_page():
-    hospitals = HospitalProfile.query.join(User).filter(User.is_approved == True, User.is_active == True).all()
-    selected_hospital_id = request.args.get('hospital_id', type=int)
-    selected_hospital = HospitalProfile.query.get(selected_hospital_id) if selected_hospital_id else None
-    beds = []
-    if selected_hospital:
-        beds = Bed.query.filter_by(hospital_id=selected_hospital.id, is_active=True, status='available').all()
-    return render_template('patient/book_bed.html', hospitals=hospitals,
-                           selected_hospital=selected_hospital, beds=beds)
+    """FIX: Self-contained booking form in patient panel with robust bed selection."""
+    try:
+        hospitals = HospitalProfile.query.join(User)\
+            .filter(User.is_approved == True, User.is_active == True).all()
+        selected_hospital_id = request.args.get('hospital_id', type=int)
+        selected_hospital = HospitalProfile.query.get(selected_hospital_id) if selected_hospital_id else None
+        beds = []
+        services = []
+        if selected_hospital:
+            beds = Bed.query.filter_by(hospital_id=selected_hospital.id,
+                                       is_active=True, status='available').all()
+            services = [s.service_name for s in selected_hospital.services if s.is_available]
 
+        if request.method == 'POST':
+            # Patient submitting booking from within the panel
+            return _process_booking(request, redirect_to='patient_dashboard',
+                                    fallback_patient_email=current_user.email)
+
+        return render_template('patient/book_bed.html',
+                               hospitals=hospitals or [],
+                               selected_hospital=selected_hospital,
+                               beds=beds or [],
+                               services=services or [],
+                               current_patient=current_user.patient_profile)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        flash(f'Unable to load booking page: {e}', 'danger')
+        return render_template('errors/500.html'), 500
+
+
+def _process_booking(req, redirect_to='patient_dashboard', fallback_patient_email=None):
+    """Shared booking processor – reads selected_beds CSV only."""
+    hospital_id = req.form.get('hospital_id', type=int)
+    # Fix legacy warning: use db.session.get
+    hospital = db.session.get(HospitalProfile, hospital_id)
+    if not hospital:
+        flash('Please select a valid hospital.', 'danger')
+        return redirect(url_for(redirect_to))
+
+    # Read bed IDs from hidden field (comma-separated)
+    bed_ids = []
+    csv_beds = req.form.get('selected_beds', '').strip()
+    if csv_beds:
+        for part in csv_beds.split(','):
+            part = part.strip()
+            if part.isdigit():
+                bed_ids.append(int(part))
+
+    print(f"[DEBUG] selected_beds raw: '{csv_beds}' -> parsed IDs: {bed_ids}")
+
+    if not bed_ids:
+        flash('Please select at least one bed.', 'danger')
+        return redirect(url_for('hospital_detail', hospital_id=hospital.id))
+
+    bed_ids = list(set(bed_ids))
+
+    # Verify beds exist and are available
+    beds = Bed.query.filter(Bed.id.in_(bed_ids), Bed.hospital_id == hospital.id,
+                            Bed.status == 'available', Bed.is_active == True).all()
+    if len(beds) != len(bed_ids):
+        flash('Some beds are no longer available. Please re-select.', 'danger')
+        return redirect(url_for('hospital_detail', hospital_id=hospital.id))
+
+    # Collect patient data
+    patient_email = req.form.get('patient_email') or fallback_patient_email
+    patient_name = req.form.get('patient_name')
+    patient_phone = req.form.get('patient_phone')
+    reason = req.form.get('reason')
+    treatment_needed = req.form.get('treatment_needed')
+    if not all([patient_name, patient_phone, patient_email, reason, treatment_needed]):
+        flash('Please fill all required fields (name, phone, email, reason, treatment).', 'danger')
+        return redirect(url_for('hospital_detail', hospital_id=hospital.id))
+
+    patient_age = req.form.get('patient_age')
+    patient_gender = req.form.get('patient_gender')
+    patient_address = req.form.get('patient_address')
+    blood_group = req.form.get('blood_group')
+    emergency_contact = req.form.get('emergency_contact')
+    admission_type = req.form.get('admission_type', 'general')
+    expected_date_str = req.form.get('expected_admission_date')
+    needs_ambulance = req.form.get('needs_ambulance') in ('on', 'true', '1', 'yes')
+    pickup_address = (req.form.get('pickup_address') or '').strip()
+    patient_lat = req.form.get('patient_lat', type=float) or 19.0760
+    patient_lng = req.form.get('patient_lng', type=float) or 72.8777
+    services_requested = req.form.getlist('services')
+
+    # Create or fetch patient user
+    patient_user = User.query.filter_by(email=patient_email).first()
+    new_account = False
+    raw_password = None
+    if not patient_user:
+        new_account = True
+        raw_password = generate_random_password()
+        patient_user = User(email=patient_email, role='patient', is_approved=True, is_active=True)
+        patient_user.set_password(raw_password)
+        patient_user.unique_id = patient_user.generate_unique_id()
+        db.session.add(patient_user)
+        db.session.commit()
+        profile = PatientProfile(user_id=patient_user.id, full_name=patient_name,
+                                 phone=patient_phone, address=patient_address,
+                                 blood_group=blood_group, emergency_contact=emergency_contact)
+        db.session.add(profile)
+        db.session.commit()
+
+    expected_date = None
+    if expected_date_str:
+        for fmt in ('%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
+            try:
+                expected_date = datetime.strptime(expected_date_str, fmt)
+                break
+            except ValueError:
+                continue
+
+    booking = Booking(
+        patient_id=patient_user.id, hospital_id=hospital.id,
+        patient_name=patient_name, patient_age=int(patient_age) if patient_age else None,
+        patient_gender=patient_gender, patient_phone=patient_phone,
+        patient_email=patient_email, patient_address=patient_address,
+        blood_group=blood_group, emergency_contact=emergency_contact,
+        reason=reason, treatment_needed=treatment_needed,
+        admission_type=admission_type, expected_admission_date=expected_date,
+        status='pending', needs_ambulance=needs_ambulance,
+    )
+    db.session.add(booking)
+    db.session.commit()
+
+    for bed in beds:
+        bed.status = 'booked'
+        bed.current_booking_id = booking.id
+        db.session.add(bed)
+        db.session.add(BookingBed(booking_id=booking.id, bed_id=bed.id))
+
+    for s in services_requested:
+        if s in HOSPITAL_SERVICES:
+            db.session.add(BookingService(booking_id=booking.id, service_name=s))
+    db.session.commit()
+
+    ambulance_info = None
+    if needs_ambulance:
+        amb = assign_nearest_ambulance(hospital.id)
+        if amb:
+            amb.status = 'assigned'
+            ab = AmbulanceBooking(
+                booking_id=booking.id, ambulance_id=amb.id,
+                patient_lat=patient_lat, patient_lng=patient_lng,
+                pickup_address=pickup_address or patient_address or 'Pickup TBD',
+                eta_minutes=15, status='assigned',
+            )
+            db.session.add(ab)
+            db.session.commit()
+            ambulance_info = {
+                'ambulance_number': amb.ambulance_number,
+                'driver_name': amb.driver_name,
+                'driver_phone': amb.driver_phone,
+                'eta_minutes': ab.eta_minutes,
+            }
+            tracking_url = url_for('track_ambulance', ambulance_booking_id=ab.id, _external=True)
+            send_html_email(patient_user.email, '🚑 Ambulance Dispatched - SwasthyaSetu',
+                            render_ambulance_assigned_email(patient_name, amb, ab.eta_minutes, tracking_url))
+
+    if new_account:
+        send_html_email(patient_user.email, 'Welcome to SwasthyaSetu',
+                        render_patient_welcome_email(patient_name, patient_user.email, raw_password, patient_user.unique_id))
+    send_html_email(patient_user.email, f'Booking Confirmation - {booking.booking_id}',
+                    render_booking_confirmation(booking, hospital, beds, ambulance_info))
+    send_html_email(hospital.user.email, f'New Booking Request - {booking.booking_id}',
+                    render_hospital_booking_notification(booking, hospital, beds))
+
+    flash(f'Booking successful! Booking ID: {booking.booking_id}', 'success')
+    if current_user.is_authenticated and current_user.role == 'patient':
+        return redirect(url_for('patient_booking_details', booking_id=booking.booking_id))
+    return redirect(url_for('login'))
 
 @app.route('/patient/booking/<booking_id>')
 @login_required
@@ -1662,11 +1751,37 @@ def patient_booking_details(booking_id):
 
 @app.route('/track/ambulance/<int:ambulance_booking_id>')
 def track_ambulance(ambulance_booking_id):
-    ab = AmbulanceBooking.query.get_or_404(ambulance_booking_id)
-    amb = ab.ambulance
-    hospital = amb.hospital
-    return render_template('patient/track_ambulance.html',
-                           ambulance_booking=ab, ambulance=amb, hospital=hospital)
+    """BUG 7 FIX: Robust ambulance tracking page with safe defaults + error handling."""
+    try:
+        ab = AmbulanceBooking.query.get(ambulance_booking_id)
+        if not ab:
+            flash(f'Ambulance booking #{ambulance_booking_id} not found.', 'danger')
+            return render_template('errors/404.html'), 404
+
+        amb = ab.ambulance
+        if not amb:
+            flash('Ambulance record missing for this booking.', 'danger')
+            return render_template('errors/404.html'), 404
+
+        hospital = amb.hospital
+
+        # Safe defaults if any coordinate is None (demo: Mumbai)
+        hospital_lat = (hospital.latitude if hospital and hospital.latitude is not None else 19.0760)
+        hospital_lng = (hospital.longitude if hospital and hospital.longitude is not None else 72.8777)
+        amb_lat = amb.latitude if amb.latitude is not None else hospital_lat
+        amb_lng = amb.longitude if amb.longitude is not None else hospital_lng
+        patient_lat = ab.patient_lat if ab.patient_lat is not None else hospital_lat
+        patient_lng = ab.patient_lng if ab.patient_lng is not None else hospital_lng
+
+        return render_template('patient/track_ambulance.html',
+                               ambulance_booking=ab, ambulance=amb, hospital=hospital,
+                               hospital_lat=hospital_lat, hospital_lng=hospital_lng,
+                               amb_lat=amb_lat, amb_lng=amb_lng,
+                               patient_lat=patient_lat, patient_lng=patient_lng)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        flash(f'Unable to load tracking page: {e}', 'danger')
+        return render_template('errors/500.html'), 500
 
 
 # ==================== PROFILE & PASSWORD ====================
@@ -1757,26 +1872,35 @@ def logout():
 # ==================== JSON APIs ====================
 @app.route('/api/ambulance/<int:ambulance_id>/status')
 def api_ambulance_status(ambulance_id):
-    amb = Ambulance.query.get_or_404(ambulance_id)
-    active = AmbulanceBooking.query.filter_by(ambulance_id=amb.id)\
-        .filter(AmbulanceBooking.status.in_(['assigned', 'on_route', 'reached']))\
-        .order_by(AmbulanceBooking.requested_at.desc()).first()
-    return jsonify({
-        'id': amb.id,
-        'driver_name': amb.driver_name,
-        'driver_phone': amb.driver_phone,
-        'ambulance_number': amb.ambulance_number,
-        'latitude': amb.latitude,
-        'longitude': amb.longitude,
-        'status': amb.status,
-        'eta_minutes': active.eta_minutes if active else None,
-        'patient_lat': active.patient_lat if active else None,
-        'patient_lng': active.patient_lng if active else None,
-        'hospital_lat': amb.hospital.latitude,
-        'hospital_lng': amb.hospital.longitude,
-        'hospital_name': amb.hospital.hospital_name,
-        'updated_at': datetime.utcnow().isoformat(),
-    })
+    amb = Ambulance.query.get(ambulance_id)
+    if not amb:
+        return jsonify({'error': 'Ambulance not found', 'ok': False}), 404
+    try:
+        active = AmbulanceBooking.query.filter_by(ambulance_id=amb.id)\
+            .filter(AmbulanceBooking.status.in_(['assigned', 'on_route', 'reached']))\
+            .order_by(AmbulanceBooking.requested_at.desc()).first()
+        h_lat = amb.hospital.latitude if amb.hospital and amb.hospital.latitude is not None else 19.0760
+        h_lng = amb.hospital.longitude if amb.hospital and amb.hospital.longitude is not None else 72.8777
+        return jsonify({
+            'ok': True,
+            'id': amb.id,
+            'driver_name': amb.driver_name,
+            'driver_phone': amb.driver_phone,
+            'ambulance_number': amb.ambulance_number,
+            'latitude': amb.latitude if amb.latitude is not None else h_lat,
+            'longitude': amb.longitude if amb.longitude is not None else h_lng,
+            'status': amb.status,
+            'eta_minutes': active.eta_minutes if active else None,
+            'patient_lat': active.patient_lat if active and active.patient_lat is not None else None,
+            'patient_lng': active.patient_lng if active and active.patient_lng is not None else None,
+            'hospital_lat': h_lat,
+            'hospital_lng': h_lng,
+            'hospital_name': amb.hospital.hospital_name if amb.hospital else 'Hospital',
+            'updated_at': datetime.utcnow().isoformat(),
+        })
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 @app.route('/api/ambulance/<int:ambulance_id>/update', methods=['POST'])
