@@ -1,67 +1,59 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Hospital Registration</div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.email.label }} {{ form.email(class="form-control") }}</div>
-                        <div class="col-md-6">{{ form.hospital_name.label }} {{ form.hospital_name(class="form-control") }}</div>
-                    </div>
-                    <div class="mb-3">{{ form.address.label }} {{ form.address(class="form-control", rows=2) }}</div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">{{ form.contact_number.label }} {{ form.contact_number(class="form-control") }}</div>
-                        <div class="col-md-4">{{ form.license_number.label }} {{ form.license_number(class="form-control") }}</div>
-                        <div class="col-md-4">{{ form.category.label }} {{ form.category(class="form-control") }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {{ form.state_id.label }} 
-                            {{ form.state_id(class="form-select", id="state_id") }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.district_id.label }} 
-                            {{ form.district_id(class="form-select", id="district_id") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">{{ form.description.label }} {{ form.description(class="form-control", rows=2) }}</div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.logo.label }} {{ form.logo(class="form-control") }}</div>
-                        <div class="col-md-6">{{ form.hospital_image.label }} {{ form.hospital_image(class="form-control") }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.password.label }} {{ form.password(class="form-control") }}</div>
-                        <div class="col-md-6">{{ form.confirm_password.label }} {{ form.confirm_password(class="form-control") }}</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">{{ form.submit.label }}</button>
-                </form>
+{% extends 'base.html' %}
+{% block title %}Hospital Registration — {{ APP_NAME }}{% endblock %}
+{% block public_content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-9">
+      <div class="card-soft fade-in-up">
+        <h3 class="section-title">Register Your Hospital</h3>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Hospital Email</label>{{ form.email(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Hospital Name</label>{{ form.hospital_name(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Contact Number</label>{{ form.contact_number(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">License Number</label>{{ form.license_number(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Category (e.g. Multi-Specialty)</label>{{ form.category(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">State</label>{{ form.state_id(class='form-select', id='state_id') }}</div>
+            <div class="col-md-6"><label class="form-label">District</label>{{ form.district_id(class='form-select', id='district_id') }}</div>
+            <div class="col-12"><label class="form-label">Address</label>{{ form.address(class='form-control', rows=2) }}</div>
+            <div class="col-12"><label class="form-label">Description</label>{{ form.description(class='form-control', rows=2) }}</div>
+            <div class="col-md-6"><label class="form-label">Hospital Logo</label>{{ form.logo(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Hospital Image</label>{{ form.hospital_image(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Password</label>{{ form.password(class='form-control') }}</div>
+            <div class="col-md-6"><label class="form-label">Confirm Password</label>{{ form.confirm_password(class='form-control') }}</div>
+            <div class="col-12">
+              <label class="form-label">Available Services (check all that apply)</label>
+              <div class="row g-2">
+                {% for s in HOSPITAL_SERVICES %}
+                <div class="col-md-3 col-6">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="services" value="{{ s }}" id="svc_{{ loop.index }}">
+                    <label class="form-check-label" for="svc_{{ loop.index }}">{{ s }}</label>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
             </div>
-        </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary w-100"><i class="bi bi-hospital"></i> Register Hospital</button>
+            </div>
+          </div>
+        </form>
+        <div class="text-center mt-3"><a href="{{ url_for('login') }}">Already registered? Login</a></div>
+        <div class="text-center mt-2"><a href="{{ url_for('index') }}" class="small text-muted"><i class="bi bi-arrow-left"></i> Back to homepage</a></div>
+      </div>
     </div>
+  </div>
 </div>
 <script>
-    const stateSelect = document.getElementById('state_id');
-    const districtSelect = document.getElementById('district_id');
-    stateSelect.addEventListener('change', function() {
-        const stateId = this.value;
-        if (stateId) {
-            fetch(`/get-districts/${stateId}`)
-                .then(res => res.json())
-                .then(data => {
-                    districtSelect.innerHTML = '<option value="">Select District</option>';
-                    data.forEach(d => {
-                        const option = document.createElement('option');
-                        option.value = d.id;
-                        option.textContent = d.name;
-                        districtSelect.appendChild(option);
-                    });
-                });
-        } else {
-            districtSelect.innerHTML = '<option value="">Select District</option>';
-        }
-    });
+document.getElementById('state_id')?.addEventListener('change', async function() {
+  const sel = document.getElementById('district_id');
+  sel.innerHTML = '<option value="">Loading…</option>';
+  if (!this.value) { sel.innerHTML = '<option value="0">-- Select District --</option>'; return; }
+  const res = await fetch(`/get-districts/${this.value}`);
+  const list = await res.json();
+  sel.innerHTML = '<option value="0">-- Select District --</option>' + list.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+});
 </script>
 {% endblock %}

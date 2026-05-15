@@ -1,43 +1,27 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Add New Bed</div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-2">{{ form.bed_number(class="form-control", placeholder="Bed Number (e.g. N-101)") }}</div>
-                    <div class="mb-2">{{ form.bed_type(class="form-select") }}</div>
-                    <div class="mb-2">{{ form.ward_name(class="form-control", placeholder="Ward Name") }}</div>
-                    <div class="mb-2">{{ form.floor(class="form-control", placeholder="Floor") }}</div>
-                    <div class="mb-2">{{ form.status(class="form-select") }}</div>
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
-        </div>
+<h2 class="section-title">Manage Beds</h2>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card-soft">
+      <h5>Add Bed</h5>
+      <form method="post">{{ form.hidden_tag() }}
+        <div class="mb-2">{{ form.bed_number(class='form-control', placeholder='Bed Number') }}</div>
+        <div class="mb-2">{{ form.bed_type(class='form-select') }}</div>
+        <div class="mb-2">{{ form.ward_name(class='form-control', placeholder='Ward Name') }}</div>
+        <div class="mb-2">{{ form.floor(class='form-control', placeholder='Floor') }}</div>
+        <div class="mb-2">{{ form.status(class='form-select') }}</div>
+        <button class="btn btn-primary w-100">Add Bed</button>
+      </form>
     </div>
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header bg-dark text-white">Existing Beds</div>
-            <div class="card-body table-responsive">
-                <table class="table table-bordered">
-                    <thead><tr><th>#</th><th>Type</th><th>Ward</th><th>Floor</th><th>Status</th><th>Action</th></thead>
-                    <tbody>
-                        {% for bed in beds %}
-                        <tr>
-                            <td>{{ bed.bed_number }}</td>
-                            <td>{{ bed.bed_type }}</td>
-                            <td>{{ bed.ward_name or '-' }}</td>
-                            <td>{{ bed.floor or '-' }}</td>
-                            <td><span class="badge bg-{{ 'success' if bed.status=='available' else 'danger' }}">{{ bed.status }}</span></td>
-                            <td><a href="{{ url_for('hospital_delete_bed', bed_id=bed.id) }}" onclick="return confirm('Delete bed?')" class="btn btn-sm btn-danger">Delete</a></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card-soft">
+      <h5>Existing Beds ({{ beds|length }})</h5>
+      <div class="table-responsive"><table class="table align-middle">
+        <thead><tr><th>#</th><th>Type</th><th>Ward</th><th>Floor</th><th>Status</th><th></th></tr></thead>
+        <tbody>{% for b in beds %}<tr><td><strong>{{ b.bed_number }}</strong></td><td><span class="status-badge status-{{ 'on_route' if b.bed_type=='emergency' else ('booked' if b.bed_type=='icu' else 'available') }}">{{ b.bed_type.upper() }}</span></td><td>{{ b.ward_name or '—' }}</td><td>{{ b.floor or '—' }}</td><td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td><td><a class="btn btn-sm btn-danger" href="{{ url_for('hospital_delete_bed', bed_id=b.id) }}" onclick="return confirm('Remove bed?')"><i class="bi bi-trash"></i></a></td></tr>{% else %}<tr><td colspan="6" class="text-muted text-center">No beds.</td></tr>{% endfor %}</tbody></table></div>
     </div>
+  </div>
 </div>
 {% endblock %}

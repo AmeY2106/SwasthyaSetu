@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Track Ambulance — {{ APP_NAME }}{% endblock %}
+{% block public_content %}
+<nav class="navbar navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}"><i class="bi bi-heart-pulse-fill text-primary"></i> {{ APP_NAME }}</a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm rounded-pill">Login</a>
+  </div>
+</nav>
+<div class="container py-4">
+  <h3 class="section-title"><i class="fa-solid fa-truck-medical text-danger"></i> Live Ambulance Tracking</h3>
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card-soft p-2">
+        {# BUG 7 FIX: explicit height + width on map div #}
+        <div id="map" style="height: 500px; width: 100%; border-radius: 12px; z-index: 0;"></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="tracking-panel">
+        <div class="eta-display">
+          <div class="eta-num"><span id="amb-eta">{{ ambulance_booking.eta_minutes or 0 }}</span></div>
+          <div class="eta-label">minutes ETA</div>
+        </div>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value"><span id="amb-status" class="status-badge status-{{ ambulance_booking.status }}">{{ ambulance_booking.status }}</span></span></div>
+        <div class="info-row"><span class="info-label">Ambulance #</span><span class="info-value">{{ ambulance.ambulance_number }}</span></div>
+        <div class="info-row"><span class="info-label">Driver</span><span class="info-value">{{ ambulance.driver_name }}</span></div>
+        <div class="info-row"><span class="info-label">Phone</span><span class="info-value"><a href="tel:{{ ambulance.driver_phone }}">{{ ambulance.driver_phone }}</a></span></div>
+        <div class="info-row"><span class="info-label">Latitude</span><span class="info-value" id="amb-lat">{{ '%.5f'|format(amb_lat) }}</span></div>
+        <div class="info-row"><span class="info-label">Longitude</span><span class="info-value" id="amb-lng">{{ '%.5f'|format(amb_lng) }}</span></div>
+        <div class="info-row"><span class="info-label">Updated</span><span class="info-value" id="amb-updated">just now</span></div>
+        <a href="tel:{{ ambulance.driver_phone }}" class="btn btn-emergency w-100 mt-3"><i class="bi bi-telephone"></i> Call Driver</a>
+      </div>
+      <div class="alert alert-info mt-3 small"><i class="bi bi-info-circle"></i> Map auto-refreshes every 10 seconds. Admin/hospital can update ambulance position via the demo control panel.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# BUG 7 FIX: variables injected as JS numbers with safe defaults; initialized inside DOMContentLoaded #}
+<script>
+  var TRACKING_CONFIG = {
+    mapId: 'map',
+    ambulanceId: {{ ambulance.id|tojson }},
+    hospitalLat: {{ (hospital_lat or 19.0760)|tojson }},
+    hospitalLng: {{ (hospital_lng or 72.8777)|tojson }},
+    hospitalName: {{ (hospital.hospital_name or 'Hospital')|tojson }},
+    patientLat: {{ (patient_lat or 19.0760)|tojson }},
+    patientLng: {{ (patient_lng or 72.8777)|tojson }},
+    initialAmbLat: {{ (amb_lat or 19.0760)|tojson }},
+    initialAmbLng: {{ (amb_lng or 72.8777)|tojson }},
+    pollInterval: 10000,
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      if (typeof L === 'undefined') {
+        console.error('Leaflet.js not loaded!');
+        document.getElementById('map').innerHTML = '<div class="alert alert-danger m-3">Map library failed to load. Please check your internet connection.</div>';
+        return;
+      }
+      console.log('Initializing ambulance tracker with config:', TRACKING_CONFIG);
+      initAmbulanceTracker(TRACKING_CONFIG);
+    } catch (e) {
+      console.error('Tracker init failed:', e);
+      document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3">Unable to initialize the live map: ' + e.message + '</div>';
+    }
+  });
+</script>
+{% endblock %}

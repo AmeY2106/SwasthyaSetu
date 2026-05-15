@@ -1,39 +1,28 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6" data-aos="fade-up">
-        <div class="card">
-            <div class="card-header bg-primary text-white fw-bold">
-                <i class="fas fa-user me-2"></i>Patient Profile
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.full_name.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
-                            {{ form.full_name(class="form-control") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.phone.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-phone"></i></span>
-                            {{ form.phone(class="form-control") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.address.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-map-marker-alt"></i></span>
-                            {{ form.address(class="form-control", rows=3) }}
-                        </div>
-                    </div>
-                    {{ form.submit(class="btn btn-primary rounded-pill py-2") }}
-                </form>
-            </div>
+<div class="row">
+  <div class="col-md-6">
+    <div class="card-soft">
+      <h4 class="section-title">My Profile</h4>
+      <form method="post">{{ form.hidden_tag() }}
+        <div class="mb-3"><label class="form-label">Full Name</label>{{ form.full_name(class='form-control') }}</div>
+        <div class="mb-3"><label class="form-label">Phone</label>{{ form.phone(class='form-control') }}</div>
+        <div class="mb-3"><label class="form-label">Address</label>{{ form.address(class='form-control', rows=2) }}</div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label">Blood Group</label>{{ form.blood_group(class='form-control') }}</div>
+          <div class="col-6"><label class="form-label">Emergency Contact</label>{{ form.emergency_contact(class='form-control') }}</div>
         </div>
+        <button class="btn btn-primary w-100">Save</button>
+      </form>
     </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card-soft">
+      <h4 class="section-title">Account</h4>
+      <p><b>Email:</b> {{ user.email }}</p>
+      <p><b>Patient ID:</b> {{ user.unique_id }}</p>
+      <p><b>Joined:</b> {{ user.created_at.strftime('%Y-%m-%d') }}</p>
+    </div>
+  </div>
 </div>
 {% endblock %}

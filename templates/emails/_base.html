@@ -1,0 +1,13 @@
+<!-- Shared email layout used as include via Jinja -->
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width:620px; margin:auto; background:#f4f7fc; padding:0; border-radius:18px; overflow:hidden;">
+  <div style="background:linear-gradient(135deg, {{ accent|default('#0a7c6b') }}, #0d6efd); padding:28px 24px; text-align:center;">
+    <div style="display:inline-block; width:56px; height:56px; border-radius:14px; background:rgba(255,255,255,0.18); color:#fff; line-height:56px; font-size:1.8rem; font-weight:bold; margin-bottom:10px;">❤</div>
+    <h2 style="color:white; margin:0; letter-spacing:1px; font-size:1.6rem;">SwasthyaSetu</h2>
+    <div style="color:#e8f1ff; font-size:13px; margin-top:6px; letter-spacing:.5px;">Real-Time Hospital Availability Platform</div>
+  </div>
+  <div style="padding:28px 26px; background:white;">
+    {{ inner|safe }}
+    <hr style="border:none; border-top:1px solid #e7ecf3; margin:26px 0 16px;">
+    <p style="font-size:12px;color:#888; text-align:center; margin:0;">© 2025 SwasthyaSetu. All rights reserved.<br>This is an automated message; please do not reply directly.</p>
+  </div>
+</div>

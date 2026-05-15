@@ -1,64 +1,59 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — {{ APP_NAME }}{% endblock %}
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-3"><div class="card text-white bg-primary"><div class="card-body"><h3>{{ total_patients }}</h3><p>Patients</p></div></div></div>
-    <div class="col-md-3"><div class="card text-white bg-success"><div class="card-body"><h3>{{ total_hospitals }}</h3><p>Approved Hospitals</p></div></div></div>
-    <div class="col-md-3"><div class="card text-white bg-warning"><div class="card-body"><h3>{{ pending_hospitals }}</h3><p>Pending Approvals</p></div></div></div>
-    <div class="col-md-3"><div class="card text-white bg-info"><div class="card-body"><h3>{{ total_bookings }}</h3><p>Total Bookings</p></div></div></div>
+<h2 class="section-title">Admin Dashboard</h2>
+<div class="dashboard-grid">
+  <div class="stat-card bg-grad-1"><i class="icon bi bi-hospital"></i><div class="label">Hospitals</div><div class="value" data-counter="{{ stats.hospitals }}">0</div></div>
+  <div class="stat-card bg-grad-2"><i class="icon bi bi-people"></i><div class="label">Patients</div><div class="value" data-counter="{{ stats.patients }}">0</div></div>
+  <div class="stat-card bg-grad-5"><i class="icon bi bi-journal-medical"></i><div class="label">Total Bookings</div><div class="value" data-counter="{{ stats.bookings }}">0</div></div>
+  <div class="stat-card bg-grad-3"><i class="icon fa-solid fa-truck-medical"></i><div class="label">Ambulances</div><div class="value" data-counter="{{ stats.ambulances }}">0</div></div>
+  <div class="stat-card bg-grad-4"><i class="icon bi bi-exclamation-octagon"></i><div class="label">Open Alerts</div><div class="value" data-counter="{{ stats.emergency_alerts }}">0</div></div>
+  <div class="stat-card bg-grad-6"><i class="icon bi bi-hourglass-split"></i><div class="label">Pending Approvals</div><div class="value" data-counter="{{ stats.pending_hospitals }}">0</div></div>
 </div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="card"><div class="card-header bg-dark text-white">Pending Hospital Approvals</div>
-            <div class="card-body">
-                {% for u in pending_hospitals_list %}
-                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                    <div><strong>{{ u.hospital_profile.hospital_name }}</strong><br><small>{{ u.email }}</small></div>
-                    <div>
-                        <a href="{{ url_for('handle_pending_hospital', user_id=u.id, action='approve') }}" class="btn btn-sm btn-success">Approve</a>
-                        <a href="{{ url_for('handle_pending_hospital', user_id=u.id, action='reject') }}" class="btn btn-sm btn-danger">Reject</a>
-                    </div>
-                </div>
-                {% else %}
-                <p class="text-muted">No pending registrations.</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card"><div class="card-header bg-dark text-white">Quick Links</div>
-            <div class="card-body">
-                <a href="{{ url_for('admin_settings') }}" class="btn btn-outline-primary w-100 mb-2">Site Settings</a>
-                <a href="{{ url_for('admin_content') }}" class="btn btn-outline-info w-100 mb-2">Edit Website Content</a>
-                <a href="{{ url_for('manage_states') }}" class="btn btn-outline-secondary w-100 mb-2">Manage States/Districts</a>
-                <a href="{{ url_for('admin_emails') }}" class="btn btn-outline-dark w-100">Email Logs</a>
-            </div>
-        </div>
-    </div>
+
+<div class="dash-charts-row">
+  <div class="chart-container"><h4><i class="bi bi-graph-up"></i> Bookings (Last 7 Days)</h4><div class="chart-canvas-wrap"><canvas id="bookingsChart"></canvas></div></div>
+  <div class="chart-container"><h4><i class="bi bi-pie-chart"></i> Hospitals by State</h4><div class="chart-canvas-wrap"><canvas id="stateChart"></canvas></div></div>
 </div>
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Bookings Trend (Last 7 Days)</div>
-            <div class="card-body">
-                <canvas id="bookingsChart" width="400" height="200"></canvas>
-            </div>
-        </div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="list-card">
+      <h4><i class="bi bi-clock-history"></i> Pending Hospital Approvals</h4>
+      {% if pending_hospitals_list %}
+      <div class="table-responsive"><table class="table table-hover align-middle">
+        <thead><tr><th>Hospital</th><th>Email</th><th>License</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for u in pending_hospitals_list %}
+          <tr><td>{{ u.hospital_profile.hospital_name if u.hospital_profile else '—' }}</td><td>{{ u.email }}</td><td>{{ u.hospital_profile.license_number if u.hospital_profile else '—' }}</td>
+            <td>
+              <a class="btn btn-sm btn-success rounded-pill" href="{{ url_for('handle_pending_hospital', user_id=u.id, action='approve') }}"><i class="bi bi-check"></i> Approve</a>
+              <a class="btn btn-sm btn-danger rounded-pill" href="{{ url_for('handle_pending_hospital', user_id=u.id, action='reject') }}"><i class="bi bi-x"></i> Reject</a>
+            </td>
+          </tr>{% endfor %}
+        </tbody></table></div>
+      {% else %}<div class="empty-state"><i class="bi bi-check2-circle"></i><p>No pending approvals.</p></div>{% endif %}
     </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="list-card">
+      <h4><i class="bi bi-exclamation-octagon text-danger"></i> Recent Emergency Alerts <a class="btn btn-sm btn-soft" href="{{ url_for('admin_emergency_alerts') }}">All</a></h4>
+      {% if recent_alerts %}
+        {% for a in recent_alerts %}
+        <div class="py-2 border-bottom">
+          <strong>{{ a.patient_name }}</strong> <span class="status-badge status-{{ a.status }}">{{ a.status }}</span>
+          <div class="small text-muted">{{ a.alert_type }} • {{ a.patient_phone }}</div>
+          <div class="small">{{ a.patient_address[:60] }}…</div>
+        </div>
+        {% endfor %}
+      {% else %}<div class="empty-state"><i class="bi bi-shield-check"></i><p>No alerts.</p></div>{% endif %}
+    </div>
+  </div>
 </div>
+{% endblock %}
+{% block scripts %}
 <script>
-    const ctx = document.getElementById('bookingsChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {{ chart_labels|tojson }},
-            datasets: [{
-                label: 'Bookings',
-                data: {{ chart_data|tojson }},
-                borderColor: '#4e73df',
-                backgroundColor: 'rgba(78,115,223,0.1)',
-                fill: true
-            }]
-        }
-    });
+  makeLineChart('bookingsChart', {{ chart_labels|tojson }}, {{ chart_data|tojson }}, 'Bookings');
+  makeBarChart('stateChart', {{ state_labels|tojson }}, {{ state_data|tojson }}, 'Hospitals');
 </script>
 {% endblock %}

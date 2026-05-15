@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }} — {{ APP_TAGLINE }}{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/sidebar.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+
+  <style>
+    /* Sidebar badge for hospital alerts (Bug 5) */
+    .sidebar-nav a .nav-badge {
+      margin-left: auto; background:#dc3545; color:white;
+      padding:2px 8px; border-radius:10px; font-size:.2rem; font-weight:200;
+    }
+    /* Emergency modal pulse */
+    .emerg-modal-icon {
+      width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#dc3545,#c1121f);
+      color:white; display:inline-flex; align-items:center; justify-content:center;
+      font-size:2.2rem; box-shadow:0 8px 22px rgba(220,53,69,.45); animation: pulse-ring 1.4s infinite;
+    }
+    @keyframes pulse-ring { 0%,100% { transform:scale(1);} 50% { transform:scale(1.06);} }
+  </style>
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  {% if current_user.is_authenticated %}
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+        <div>
+          <span class="brand-text">{{ APP_NAME }}</span>
+          <span class="brand-sub">{{ APP_TAGLINE }}</span>
+        </div>
+      </div>
+
+      <div class="user-card">
+        <div class="avatar">{{ current_user.initials }}</div>
+        <div class="info">
+          <div class="name">{{ current_user.display_name }}</div>
+          <div class="role">{{ current_user.role }}</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        {% set ep = request.endpoint or '' %}
+        {% if current_user.role == 'admin' %}
+          <div class="sidebar-section-label">Main</div>
+          <ul>
+            <li><a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if ep=='admin_dashboard' else '' }}"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+            <li><a href="{{ url_for('admin_hospitals') }}" class="{{ 'active' if 'hospital' in ep and 'admin' in ep else '' }}"><i class="bi bi-hospital"></i><span>Manage Hospitals</span></a></li>
+            <li><a href="{{ url_for('admin_ambulances') }}" class="{{ 'active' if ep=='admin_ambulances' else '' }}"><i class="fa-solid fa-truck-medical"></i><span>Manage Ambulances</span></a></li>
+            <li><a href="{{ url_for('admin_patients') }}" class="{{ 'active' if 'patient' in ep else '' }}"><i class="bi bi-people"></i><span>Manage Patients</span></a></li>
+            <li><a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if ep=='admin_bookings' else '' }}"><i class="bi bi-journal-medical"></i><span>All Bookings</span></a></li>
+            <li><a href="{{ url_for('admin_emergency_alerts') }}" class="{{ 'active' if ep=='admin_emergency_alerts' else '' }}"><i class="bi bi-exclamation-octagon"></i><span>Emergency Alerts</span></a></li>
+          </ul>
+          <div class="sidebar-section-label">Geography & Services</div>
+          <ul>
+            <li><a href="{{ url_for('manage_states') }}" class="{{ 'active' if ep in ['manage_states','manage_districts'] else '' }}"><i class="bi bi-geo-alt"></i><span>States & Districts</span></a></li>
+            <li><a href="{{ url_for('admin_hospital_services') }}" class="{{ 'active' if ep=='admin_hospital_services' else '' }}"><i class="bi bi-clipboard2-pulse"></i><span>Hospital Services</span></a></li>
+          </ul>
+          <div class="sidebar-section-label">System</div>
+          <ul>
+            <li><a href="{{ url_for('admin_emails') }}" class="{{ 'active' if 'email' in ep and ep != 'admin_test_email' else '' }}"><i class="bi bi-envelope"></i><span>Email Logs</span></a></li>
+            <li><a href="{{ url_for('admin_test_email') }}" class="{{ 'active' if ep=='admin_test_email' else '' }}"><i class="bi bi-envelope-check"></i><span>Test Email</span></a></li>
+            <li><a href="{{ url_for('admin_settings') }}" class="{{ 'active' if ep=='admin_settings' else '' }}"><i class="bi bi-gear"></i><span>Site Settings</span></a></li>
+            <li><a href="{{ url_for('admin_content') }}" class="{{ 'active' if ep=='admin_content' else '' }}"><i class="bi bi-file-text"></i><span>Site Content</span></a></li>
+            <li><a href="{{ url_for('change_password') }}" class="{{ 'active' if ep=='change_password' else '' }}"><i class="bi bi-shield-lock"></i><span>Change Password</span></a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+          </ul>
+
+        {% elif current_user.role == 'hospital' %}
+          <div class="sidebar-section-label">Hospital</div>
+          <ul>
+            <li>
+              <a href="{{ url_for('hospital_dashboard') }}" class="{{ 'active' if ep=='hospital_dashboard' else '' }}">
+                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                {% if hospital_alert_count and hospital_alert_count > 0 %}<span class="nav-badge">{{ hospital_alert_count }}</span>{% endif %}
+              </a>
+            </li>
+            <li><a href="{{ url_for('hospital_beds') }}" class="{{ 'active' if ep=='hospital_beds' else '' }}"><i class="fa-solid fa-bed"></i><span>Manage Beds</span></a></li>
+            <li><a href="{{ url_for('hospital_bookings') }}" class="{{ 'active' if ep=='hospital_bookings' else '' }}"><i class="bi bi-journal-text"></i><span>My Bookings</span></a></li>
+            <li><a href="{{ url_for('hospital_ambulances') }}" class="{{ 'active' if ep=='hospital_ambulances' else '' }}"><i class="fa-solid fa-truck-medical"></i><span>My Ambulances</span></a></li>
+            <li><a href="{{ url_for('hospital_services') }}" class="{{ 'active' if ep=='hospital_services' else '' }}"><i class="bi bi-clipboard2-pulse"></i><span>Hospital Services</span></a></li>
+            <li><a href="{{ url_for('hospital_tracking') }}" class="{{ 'active' if ep=='hospital_tracking' else '' }}"><i class="bi bi-geo-alt-fill"></i><span>Ambulance Tracking</span></a></li>
+          </ul>
+          <div class="sidebar-section-label">Account</div>
+          <ul>
+            <li><a href="{{ url_for('profile') }}" class="{{ 'active' if ep=='profile' else '' }}"><i class="bi bi-person-circle"></i><span>My Profile</span></a></li>
+            <li><a href="{{ url_for('change_password') }}" class="{{ 'active' if ep=='change_password' else '' }}"><i class="bi bi-shield-lock"></i><span>Change Password</span></a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+          </ul>
+
+        {% else %}
+          <div class="sidebar-section-label">Patient</div>
+          <ul>
+            <li><a href="{{ url_for('patient_dashboard') }}" class="{{ 'active' if ep=='patient_dashboard' else '' }}"><i class="bi bi-speedometer2"></i><span>My Dashboard</span></a></li>
+            <li><a href="{{ url_for('index') }}"><i class="bi bi-hospital"></i><span>Find Hospitals</span></a></li>
+            <li><a href="{{ url_for('patient_book_bed_page') }}" class="{{ 'active' if ep=='patient_book_bed_page' else '' }}"><i class="fa-solid fa-bed"></i><span>Book a Bed</span></a></li>
+            <li><a href="#" onclick="document.querySelector('.emergency-modal-trigger').click(); return false;"><i class="bi bi-exclamation-octagon"></i><span>Emergency Help</span></a></li>
+          </ul>
+          <div class="sidebar-section-label">Account</div>
+          <ul>
+            <li><a href="{{ url_for('profile') }}" class="{{ 'active' if ep=='profile' else '' }}"><i class="bi bi-person-circle"></i><span>My Profile</span></a></li>
+            <li><a href="{{ url_for('change_password') }}" class="{{ 'active' if ep=='change_password' else '' }}"><i class="bi bi-shield-lock"></i><span>Change Password</span></a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+          </ul>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar-footer">{{ APP_COPYRIGHT }}</div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="toggle-btn" id="sidebarToggle" aria-label="Toggle sidebar"><i class="bi bi-list"></i></button>
+        <div class="d-flex align-items-center gap-2">
+          <span class="brand-pulse"></span>
+          <strong>{{ APP_NAME }}</strong>
+          <span class="text-muted small d-none d-md-inline">— {{ APP_TAGLINE }}</span>
+        </div>
+        <div class="topbar-right">
+          {# BUG 6 FIX: Emergency button opens modal (works on ALL pages, ALL roles) #}
+          <button type="button"
+                  class="btn btn-emergency btn-sm d-none d-sm-inline-flex emergency-modal-trigger"
+                  data-bs-toggle="modal" data-bs-target="#emergencyModal">
+            <i class="bi bi-exclamation-octagon"></i>&nbsp; Emergency
+          </button>
+          <a class="logout-btn" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="flash-container">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else category }} auto-dismiss alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endwith %}
+        </div>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% else %}
+    <div class="flash-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} auto-dismiss alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block public_content %}{% endblock %}
+  {% endif %}
+
+  <!-- BUG 6 FIX: Emergency Modal (available in base.html so it works on every page/role) -->
+  <div class="modal fade" id="emergencyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="border-radius:18px; overflow:hidden; border:none;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#dc3545,#c1121f); color:white; border:none;">
+          <h5 class="modal-title"><i class="bi bi-exclamation-octagon-fill"></i> Emergency Request</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-3">
+            <div class="emerg-modal-icon"><i class="bi bi-truck"></i></div>
+            <p class="text-muted small mt-2">Fill in your details — our team will dispatch help right away.</p>
+          </div>
+          <form id="emergencyForm">
+            <div class="row g-2">
+              <div class="col-md-6"><label class="form-label small">Full Name *</label>
+                <input class="form-control" name="patient_name" required value="{% if current_user.is_authenticated %}{{ current_user.display_name }}{% endif %}">
+              </div>
+              <div class="col-md-6"><label class="form-label small">Phone *</label>
+                <input class="form-control" name="patient_phone" required value="{% if current_user.is_authenticated and current_user.role == 'patient' and current_user.patient_profile %}{{ current_user.patient_profile.phone }}{% elif current_user.is_authenticated and current_user.role == 'hospital' and current_user.hospital_profile %}{{ current_user.hospital_profile.contact_number }}{% endif %}">
+              </div>
+              <div class="col-12"><label class="form-label small">Address / Pickup Location *</label>
+                <textarea class="form-control" name="patient_address" rows="2" required>{% if current_user.is_authenticated and current_user.role == 'patient' and current_user.patient_profile %}{{ current_user.patient_profile.address or '' }}{% endif %}</textarea>
+              </div>
+              <div class="col-md-6"><label class="form-label small">Emergency Type *</label>
+                <select class="form-select" name="alert_type" required>
+                  <option value="ambulance">🚑 Ambulance Required</option>
+                  <option value="icu">🛏️ ICU Bed</option>
+                  <option value="general">⚕️ General Emergency</option>
+                </select>
+              </div>
+              <div class="col-md-6"><label class="form-label small">Email (optional)</label>
+                <input class="form-control" type="email" name="patient_email" value="{% if current_user.is_authenticated %}{{ current_user.email }}{% endif %}">
+              </div>
+            </div>
+            <div id="emergencyResult" class="mt-3"></div>
+            <div class="d-flex gap-2 justify-content-end mt-3">
+              <button type="button" class="btn btn-soft" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-emergency" id="emergencySubmit">
+                <i class="bi bi-send"></i> Send Emergency Alert
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
+
+  <script>
+    // BUG 6 FIX: Wire up emergency modal AJAX submission (works on every page/role)
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('emergencyForm');
+      if (!form) return;
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('emergencySubmit');
+        const resultDiv = document.getElementById('emergencyResult');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+        resultDiv.innerHTML = '';
+        try {
+          const formData = new FormData(form);
+          const payload = {};
+          formData.forEach((v, k) => payload[k] = v);
+          const res = await fetch('/api/emergency/alert', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.ok) {
+            resultDiv.innerHTML = `<div class="alert alert-success mb-0"><i class="bi bi-check-circle"></i> Emergency alert sent! Reference #EMG-${String(data.alert_id).padStart(5,'0')}. Help is on the way.</div>`;
+            setTimeout(() => {
+              bootstrap.Modal.getInstance(document.getElementById('emergencyModal'))?.hide();
+              form.reset();
+              resultDiv.innerHTML = '';
+            }, 2500);
+          } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger mb-0">${data.error || 'Failed to send alert'}</div>`;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = `<div class="alert alert-danger mb-0">Network error: ${err.message}</div>`;
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-send"></i> Send Emergency Alert';
+        }
+      });
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

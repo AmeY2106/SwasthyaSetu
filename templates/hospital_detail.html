@@ -1,128 +1,248 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h4>{{ hospital.hospital_name }}</h4>
+{% extends 'base.html' %}
+{% block title %}{{ hospital.hospital_name }} — {{ APP_NAME }}{% endblock %}
+
+{% block public_content %}
+<nav class="navbar navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+      <i class="bi bi-heart-pulse-fill text-primary"></i> {{ APP_NAME }}
+    </a>
+    <a href="{{ url_for('emergency_page') }}" class="btn btn-emergency btn-sm">
+      <i class="bi bi-exclamation-octagon"></i> Emergency
+    </a>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <a href="{{ url_for('index') }}" class="text-muted small mb-3 d-inline-block">
+    <i class="bi bi-arrow-left"></i> Back to hospitals
+  </a>
+  
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card-soft">
+        <div class="d-flex gap-3 align-items-start">
+          <div style="width:88px;height:88px;border-radius:14px;background:linear-gradient(135deg,#0a7c6b,#0d6efd);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:2.5rem;flex-shrink:0; overflow:hidden;">
+            {% if hospital.logo_filename %}
+              <img src="{{ url_for('hospital_logo', filename=hospital.logo_filename) }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+              <i class="bi bi-hospital"></i>
+            {% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <h3 class="mb-1">{{ hospital.hospital_name }}</h3>
+            <div class="text-muted"><i class="bi bi-geo-alt"></i> {{ hospital.address }}</div>
+            <div class="text-muted small">
+              <i class="bi bi-telephone"></i> {{ hospital.contact_number }} &nbsp;•&nbsp; ⭐ {{ '%.1f'|format(hospital.rating or 0) }}
             </div>
-            <div class="card-body">
-                <p><i class="fas fa-map-marker-alt me-2"></i> {{ hospital.address }}</p>
-                <p><i class="fas fa-phone me-2"></i> {{ hospital.contact_number }}</p>
-                <p>{{ hospital.description or '' }}</p>
-                <div class="mb-3">
-                    <button class="btn btn-outline-secondary filter-bed" data-type="all">All Beds</button>
-                    <button class="btn btn-outline-primary filter-bed" data-type="normal">Normal</button>
-                    <button class="btn btn-outline-danger filter-bed" data-type="emergency">Emergency</button>
-                    <button class="btn btn-outline-info filter-bed" data-type="icu">ICU</button>
-                </div>
-                <div id="beds-grid" class="row g-2"></div>
-                <div class="mt-4">
-                    <h5>Selected Beds: <span id="selected-count">0</span></h5>
-                    <div id="selected-beds-list"></div>
-                    <button class="btn btn-success mt-3" id="proceed-to-book" disabled>Proceed to Book</button>
-                </div>
+            <div class="mt-2">
+              <span class="status-badge status-available">{{ hospital.available_normal_beds }} Normal</span>
+              <span class="status-badge status-on_route">{{ hospital.available_emergency_beds }} Emerg</span>
+              <span class="status-badge status-booked">{{ hospital.available_icu_beds }} ICU</span>
             </div>
+          </div>
         </div>
+        <p class="mt-3 text-muted">{{ hospital.description or 'A trusted healthcare partner.' }}</p>
+
+        <h6 class="mt-3 mb-2">Services Offered</h6>
+        <div class="d-flex flex-wrap gap-1">
+          {% for s in hospital.service_names %}
+            <span class="service-badge"><i class="bi bi-check-circle"></i> {{ s }}</span>
+          {% else %}
+            <em class="text-muted">No services listed.</em>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card-soft mt-4">
+        <h5 class="section-title">Hospital Location</h5>
+        <div id="map" style="height:320px; border-radius:12px;"></div>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card" id="booking-form-container" style="display:none;">
-            <div class="card-header bg-dark text-white">Patient Admission Details</div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('book_beds') }}" id="booking-form">
-                    <input type="hidden" name="hospital_id" value="{{ hospital.id }}">
-                    <input type="hidden" name="selected_beds" id="selected_beds_input">
-                    
-                    <div class="mb-2"><input type="text" name="patient_name" placeholder="Full Name *" class="form-control" required></div>
-                    <div class="mb-2"><input type="number" name="patient_age" placeholder="Age *" class="form-control" required></div>
-                    <div class="mb-2">
-                        <select name="patient_gender" class="form-control" required>
-                            <option value="M">Male</option><option value="F">Female</option><option value="O">Other</option>
-                        </select>
-                    </div>
-                    <div class="mb-2"><input type="tel" name="patient_phone" placeholder="Phone *" class="form-control" required></div>
-                    <div class="mb-2"><input type="email" name="patient_email" placeholder="Email *" class="form-control" required></div>
-                    <div class="mb-2"><textarea name="patient_address" placeholder="Residential Address" class="form-control"></textarea></div>
-                    <div class="mb-2"><input type="text" name="blood_group" placeholder="Blood Group (e.g. O+)" class="form-control"></div>
-                    <div class="mb-2"><input type="text" name="emergency_contact" placeholder="Emergency Contact No." class="form-control"></div>
-                    <div class="mb-2"><textarea name="reason" placeholder="Reason for Admission *" class="form-control" required></textarea></div>
-                    <div class="mb-2"><input type="text" name="treatment_needed" placeholder="Treatment Required *" class="form-control" required></div>
-                    <div class="mb-2">
-                        <select name="admission_type" class="form-control">
-                            <option value="general">General</option><option value="emergency">Emergency</option><option value="icu">ICU</option>
-                        </select>
-                    </div>
-                    <div class="mb-2"><input type="datetime-local" name="expected_admission_date" class="form-control"></div>
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill">Confirm Booking</button>
-                </form>
+
+    <div class="col-lg-4">
+      <div class="card-soft">
+        <h5 class="section-title">Book a Bed</h5>
+        <form method="post" action="{{ url_for('book_beds') }}" id="bookForm">
+          <input type="hidden" name="hospital_id" value="{{ hospital.id }}">
+          <input type="hidden" name="selected_beds" id="selected_beds" value="">
+
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Filter by Type</label>
+            <select id="bedTypeFilter" class="form-select form-select-sm">
+              <option value="all">All Available Beds</option>
+              <option value="normal">Normal</option>
+              <option value="emergency">Emergency</option>
+              <option value="icu">ICU</option>
+            </select>
+          </div>
+
+          <div id="bedList" style="max-height:220px; overflow-y:auto; border:1px solid #eef; border-radius:10px; padding:10px; background:#fcfdff;">
+            {% for b in beds if b.status == 'available' %}
+              <div class="form-check bed-row mb-2" data-type="{{ b.bed_type }}">
+                <input class="form-check-input bed-check" type="checkbox" value="{{ b.id }}" id="b{{ b.id }}">
+                <label class="form-check-label small" for="b{{ b.id }}">
+                  <strong>{{ b.bed_number }}</strong> ({{ b.bed_type.upper() }})<br>
+                  <span class="text-muted">{{ b.ward_name or 'General' }} • Fl. {{ b.floor or '—' }}</span>
+                </label>
+              </div>
+            {% else %}
+              <div class="text-center py-3">
+                <i class="bi bi-exclamation-circle text-muted"></i>
+                <div class="text-muted small">No available beds found.</div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-3">
+          <h6 class="mb-3">Patient Information</h6>
+          <div class="row g-2">
+            <div class="col-12">
+                <input class="form-control" name="patient_name" placeholder="Full Name *" required>
             </div>
-        </div>
-        <div class="card mt-3">
-            <div class="card-header bg-info text-white">Bed Legend</div>
-            <div class="card-body">
-                <p><span class="badge bg-success">🟢 Available</span> <span class="badge bg-secondary">⚪ Booked</span></p>
-                <p><span class="badge bg-warning">🟡 Maintenance</span> <span class="badge bg-danger">🔴 Emergency Reserved</span></p>
-                <p><span class="badge bg-primary">🔵 Selected</span></p>
+            <div class="col-6">
+                <input class="form-control" name="patient_age" type="number" placeholder="Age *" required>
             </div>
-        </div>
+            <div class="col-6">
+                <select class="form-select" name="patient_gender" required>
+                    <option value="">Gender *</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <input class="form-control" name="patient_phone" placeholder="Phone Number *" required>
+            </div>
+            <div class="col-12">
+                <input class="form-control" name="patient_email" placeholder="Email Address *" type="email" required>
+            </div>
+            <div class="col-12">
+                <textarea class="form-control" name="patient_address" rows="2" placeholder="Residential Address"></textarea>
+            </div>
+          </div>
+
+          <h6 class="mt-3 mb-2">Medical Details</h6>
+          <div class="row g-2">
+            <div class="col-12">
+                <textarea class="form-control" name="reason" rows="2" placeholder="Reason for admission *" required></textarea>
+            </div>
+            <div class="col-12">
+                <input class="form-control" name="treatment_needed" placeholder="Primary treatment required *" required>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted">Admission Type</label>
+              <select class="form-select" name="admission_type">
+                <option value="general">General</option>
+                <option value="emergency">Emergency</option>
+                <option value="icu">ICU</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted">Expected Date</label>
+              <input class="form-control" type="datetime-local" name="expected_admission_date">
+            </div>
+          </div>
+
+          {% if hospital.service_names %}
+          <hr class="my-3">
+          <h6 class="mb-2">Additional Services</h6>
+          <div class="row g-1">
+            {% for s in hospital.service_names %}
+              <div class="col-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="services" value="{{ s }}" id="svc_{{ loop.index }}">
+                  <label class="form-check-label small" for="svc_{{ loop.index }}">{{ s }}</label>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <hr class="my-3">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="ambChk" name="needs_ambulance">
+            <label class="form-check-label fw-bold" for="ambChk">Request Ambulance Pickup</label>
+          </div>
+          <div id="ambBlock" style="display:none;" class="bg-light p-2 rounded">
+            <textarea class="form-control mb-2" name="pickup_address" rows="2" placeholder="Pickup Address"></textarea>
+            <div class="row g-2">
+              <div class="col-6"><input class="form-control form-control-sm" name="patient_lat" placeholder="Latitude"></div>
+              <div class="col-6"><input class="form-control form-control-sm" name="patient_lng" placeholder="Longitude"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mt-4 py-2 fw-bold">
+            <i class="bi bi-check-circle"></i> Confirm Booking
+          </button>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-let selectedBeds = new Set();
+  // Initialize Map
+  document.addEventListener('DOMContentLoaded', function() {
+    const hospitalLat = {{ hospital.latitude or 19.0760 }};
+    const hospitalLng = {{ hospital.longitude or 72.8777 }};
+    
+    const map = L.map('map').setView([hospitalLat, hospitalLng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    
+    L.marker([hospitalLat, hospitalLng]).addTo(map)
+      .bindPopup('<b>{{ hospital.hospital_name }}</b>')
+      .openPopup();
 
-function loadBeds(type='all') {
-    fetch(`/api/hospital/{{ hospital.id }}/beds?type=${type}`)
-        .then(res => res.json())
-        .then(beds => {
-            const container = document.getElementById('beds-grid');
-            container.innerHTML = '';
-            beds.forEach(bed => {
-                let statusClass = 'btn-secondary';
-                let statusText = '';
-                if (bed.status === 'available') { statusClass = 'btn-success'; statusText = 'Available'; }
-                else if (bed.status === 'booked') { statusClass = 'btn-secondary disabled'; statusText = 'Booked'; }
-                else if (bed.status === 'maintenance') { statusClass = 'btn-warning'; statusText = 'Maintenance'; }
-                else if (bed.status === 'emergency_reserved') { statusClass = 'btn-danger'; statusText = 'Emergency Reserved'; }
-                const selected = selectedBeds.has(bed.id);
-                const col = document.createElement('div');
-                col.className = 'col-auto';
-                col.innerHTML = `<button class="btn ${statusClass} bed-icon ${selected ? 'selected' : ''}" data-id="${bed.id}" data-status="${bed.status}" ${bed.status !== 'available' ? 'disabled' : ''}>
-                                    <i class="fas fa-bed"></i> ${bed.bed_number}<br><small>${bed.bed_type}</small><br><span class="badge bg-light text-dark">${statusText}</span>
-                                </button>`;
-                container.appendChild(col);
+    // Bed type filter logic
+    const bedFilter = document.getElementById('bedTypeFilter');
+    if (bedFilter) {
+        bedFilter.addEventListener('change', function() {
+            const selectedType = this.value;
+            document.querySelectorAll('#bedList .bed-row').forEach(row => {
+                if (selectedType === 'all' || row.dataset.type === selectedType) {
+                    row.style.display = 'block';
+                } else {
+                    row.style.display = 'none';
+                }
             });
-            attachBedEvents();
         });
-}
+    }
 
-function attachBedEvents() {
-    document.querySelectorAll('.bed-icon:not([disabled])').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.id);
-            if (selectedBeds.has(id)) {
-                selectedBeds.delete(id);
-                btn.classList.remove('selected');
-            } else {
-                selectedBeds.add(id);
-                btn.classList.add('selected');
+    // Ambulance block toggle
+    const ambChk = document.getElementById('ambChk');
+    const ambBlock = document.getElementById('ambBlock');
+    if (ambChk && ambBlock) {
+        ambChk.addEventListener('change', function() {
+            ambBlock.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // Form Submission: Sync checkboxes to hidden input
+    const bookForm = document.getElementById('bookForm');
+    if (bookForm) {
+        bookForm.addEventListener('submit', function(e) {
+            // Find all checked beds
+            const checkedCheckboxes = document.querySelectorAll('.bed-check:checked');
+            const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.value);
+            
+            console.log('[FormSubmit] Selected IDs:', selectedIds);
+
+            if (selectedIds.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one bed from the list.');
+                return false;
             }
-            document.getElementById('selected-count').innerText = selectedBeds.size;
-            document.getElementById('selected_beds_input').value = Array.from(selectedBeds).join(',');
-            document.getElementById('proceed-to-book').disabled = selectedBeds.size === 0;
+
+            // Set the value of the hidden input field for the backend
+            const hiddenInput = document.getElementById('selected_beds');
+            hiddenInput.value = selectedIds.join(',');
+            
+            return true;
         });
-    });
-}
-
-document.getElementById('proceed-to-book').addEventListener('click', () => {
-    document.getElementById('booking-form-container').style.display = 'block';
-    document.getElementById('proceed-to-book').style.display = 'none';
-});
-
-document.querySelectorAll('.filter-bed').forEach(btn => {
-    btn.addEventListener('click', () => loadBeds(btn.dataset.type));
-});
-
-loadBeds('all');
+    }
+  });
 </script>
 {% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">Hospital Services</h2>
+<p class="text-muted">Toggle the services your hospital offers. Patients will see these on your hospital page.</p>
+<div class="card-soft">
+  <form method="post">
+    <div class="row g-3">
+      {% for s in HOSPITAL_SERVICES %}
+      <div class="col-md-3 col-6">
+        <label class="d-flex align-items-center gap-2 p-3 border rounded-3 cursor-pointer" style="cursor:pointer; transition:.2s;">
+          <input class="form-check-input" type="checkbox" name="services" value="{{ s }}" {% if s in current_services %}checked{% endif %}>
+          <span><strong>{{ s }}</strong></span>
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary mt-4"><i class="bi bi-check"></i> Save Services</button>
+  </form>
+</div>
+{% endblock %}

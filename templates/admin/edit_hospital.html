@@ -1,27 +1,19 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8" data-aos="fade-up">
-        <div class="card">
-            <div class="card-header bg-warning fw-bold">Edit Hospital: {{ hospital.hospital_name }}</div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">{{ form.hospital_name.label(class="form-label") }}{{ form.hospital_name(class="form-control") }}</div>
-                    <div class="mb-3">{{ form.address.label(class="form-label") }}{{ form.address(class="form-control", rows=2) }}</div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.contact_number.label(class="form-label") }}{{ form.contact_number(class="form-control") }}</div>
-                        <div class="col-md-6">{{ form.district_id.label(class="form-label") }}{{ form.district_id(class="form-select") }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.total_normal_beds.label(class="form-label") }}{{ form.total_normal_beds(class="form-control") }}</div>
-                        <div class="col-md-6">{{ form.total_emergency_beds.label(class="form-label") }}{{ form.total_emergency_beds(class="form-control") }}</div>
-                    </div>
-                    <div class="mb-3">{{ form.description.label(class="form-label") }}{{ form.description(class="form-control", rows=2) }}</div>
-                    {{ form.submit(class="btn btn-primary rounded-pill") }}
-                </form>
-            </div>
-        </div>
+<h2 class="section-title">Edit Hospital</h2>
+<div class="card-soft">
+  <form method="post">{{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label">Name</label>{{ form.hospital_name(class='form-control') }}</div>
+      <div class="col-md-6"><label class="form-label">Contact</label>{{ form.contact_number(class='form-control') }}</div>
+      <div class="col-md-6"><label class="form-label">District</label>{{ form.district_id(class='form-select') }}</div>
+      <div class="col-md-6"><label class="form-label">Rating</label>{{ form.rating(class='form-control', step='0.1') }}</div>
+      <div class="col-md-6"><label class="form-label">Latitude</label>{{ form.latitude(class='form-control', step='any') }}</div>
+      <div class="col-md-6"><label class="form-label">Longitude</label>{{ form.longitude(class='form-control', step='any') }}</div>
+      <div class="col-12"><label class="form-label">Address</label>{{ form.address(class='form-control', rows=2) }}</div>
+      <div class="col-12"><label class="form-label">Description</label>{{ form.description(class='form-control', rows=2) }}</div>
+      <div class="col-12"><button class="btn btn-primary">Update Hospital</button> <a class="btn btn-soft" href="{{ url_for('admin_hospitals') }}">Cancel</a></div>
     </div>
+  </form>
 </div>
 {% endblock %}

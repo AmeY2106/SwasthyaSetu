@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">Emergency Alerts</h2>
+<div class="card-soft">
+  <div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>Time</th><th>Patient</th><th>Type</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for a in alerts %}
+      <tr>
+        <td><small>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</small></td>
+        <td><strong>{{ a.patient_name }}</strong><br><small class="text-muted">{{ a.patient_phone }}</small></td>
+        <td><span class="status-badge status-on_route">{{ a.alert_type }}</span></td>
+        <td><small>{{ a.patient_address }}</small></td>
+        <td><span class="status-badge status-{{ a.status }}">{{ a.status }}</span></td>
+        <td>
+          <form method="post" class="d-flex gap-1 flex-wrap">
+            <input type="hidden" name="alert_id" value="{{ a.id }}">
+            {% if a.status == 'open' %}
+            <select name="hospital_id" class="form-select form-select-sm" style="width:140px;">
+              <option value="">Assign hospital…</option>
+              {% for h in hospitals %}<option value="{{ h.id }}">{{ h.hospital_name }}</option>{% endfor %}
+            </select>
+            <button name="action" value="assign" class="btn btn-sm btn-soft">Assign</button>
+            {% endif %}
+            <button name="action" value="resolve" class="btn btn-sm btn-success">Resolve</button>
+            <button name="action" value="delete" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="6" class="text-center text-muted">No alerts.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+{% endblock %}

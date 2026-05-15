@@ -1,34 +1,24 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row">
-    <div class="col-md-5 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">Add District</div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    {{ form.name(class="form-control mb-2", placeholder="District name") }}
-                    {{ form.state_id(class="form-select mb-2") }}
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
-        </div>
+<h2 class="section-title">Districts</h2>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card-soft">
+      <h5>Add District</h5>
+      <form method="post">{{ form.hidden_tag() }}
+        <div class="mb-3">{{ form.name(class='form-control', placeholder='District name') }}</div>
+        <div class="mb-3">{{ form.state_id(class='form-select') }}</div>
+        <button class="btn btn-primary w-100">Add District</button>
+      </form>
+      <a href="{{ url_for('manage_states') }}" class="btn btn-soft mt-3 w-100">← Manage States</a>
     </div>
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header bg-dark text-white">Existing Districts</div>
-            <div class="card-body">
-                <table class="table table-bordered">
-                    <thead><tr><th>District</th><th>State</th><th>Action</th></thead>
-                    <tbody>
-                        {% for d in districts %}
-                        <tr><td>{{ d.name }}</td><td>{{ d.state.name }}</td>
-                        <td><a href="{{ url_for('delete_district', district_id=d.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</a></td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card-soft">
+      <h5>Existing Districts</h5>
+      <table class="table"><thead><tr><th>Name</th><th>State</th><th></th></tr></thead>
+        <tbody>{% for d in districts %}<tr><td>{{ d.name }}</td><td>{{ d.state.name }}</td><td><a class="btn btn-sm btn-danger" href="{{ url_for('delete_district', district_id=d.id) }}" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a></td></tr>{% else %}<tr><td colspan="3" class="text-muted text-center">No districts.</td></tr>{% endfor %}</tbody></table>
     </div>
+  </div>
 </div>
 {% endblock %}
