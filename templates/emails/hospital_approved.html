@@ -1,0 +1,26 @@
+{% set inner %}
+<h3 style="margin-top:0; color:#198754;">✅ Hospital Registration Approved</h3>
+<p>Dear <b>{{ hospital_name }}</b> Team,</p>
+<p>Congratulations! Your hospital registration on <b>SwasthyaSetu</b> has been approved by our admin team.</p>
+
+<div style="background:#e8f5e9; border-radius:12px; padding:18px; margin:18px 0;">
+  <table style="width:100%; font-size:14px;">
+    <tr><td style="padding:6px 0; color:#666;">Hospital ID:</td><td><code>{{ unique_id }}</code></td></tr>
+    <tr><td style="padding:6px 0; color:#666;">Login Email:</td><td>{{ email }}</td></tr>
+  </table>
+</div>
+
+<p>You can now log in and manage:</p>
+<ul style="font-size:14px;">
+  <li>Bed availability (Normal, Emergency, ICU)</li>
+  <li>Hospital services (MRI, ICU, X-Ray, etc.)</li>
+  <li>Ambulances and live tracking</li>
+  <li>Patient bookings and emergency alerts</li>
+</ul>
+
+<div style="text-align:center; margin:24px 0;">
+  <a href="{{ login_url }}" style="background:linear-gradient(135deg,#0a7c6b,#0d6efd); color:white; padding:12px 34px; border-radius:30px; text-decoration:none; font-weight:bold; display:inline-block;">Login to Dashboard</a>
+</div>
+{% endset %}
+{% set accent = '#198754' %}
+{% include 'emails/_base.html' %}

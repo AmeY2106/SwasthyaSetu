@@ -1,0 +1,15 @@
+{% set inner %}
+<h3 style="margin-top:0; color:#0d6efd;">🔐 Email Verification</h3>
+<p>Your one-time verification code is:</p>
+
+<div style="text-align:center; margin:24px 0;">
+  <div style="display:inline-block; font-size:38px; letter-spacing:10px; background:#f0f4ff; padding:18px 28px; border-radius:14px; font-weight:bold; color:#0d6efd; border:2px dashed #0d6efd44;">{{ otp }}</div>
+</div>
+
+<p style="font-size:14px;"><b>Expires:</b> {{ expires_in|default('10') }} minutes from now.</p>
+<p style="background:#fff8e1; padding:10px 14px; border-radius:8px; border-left:4px solid #ffc107; font-size:13px;">
+  🔒 Never share this OTP with anyone. SwasthyaSetu staff will never ask for it.
+</p>
+{% endset %}
+{% set accent = '#0d6efd' %}
+{% include 'emails/_base.html' %}

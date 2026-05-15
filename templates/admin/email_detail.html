@@ -1,20 +1,10 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center" data-aos="fade-up">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-dark text-white">Email Details</div>
-            <div class="card-body">
-                <p><strong>To:</strong> {{ log.recipient }}</p>
-                <p><strong>Subject:</strong> {{ log.subject }}</p>
-                <p><strong>Sent:</strong> {{ log.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                <hr>
-                <div class="border p-3 bg-light" style="max-height: 500px; overflow: auto;">
-                    {{ log.full_html | safe }}
-                </div>
-                <a href="{{ url_for('admin_emails') }}" class="btn btn-secondary mt-3">Back to Logs</a>
-            </div>
-        </div>
-    </div>
+<h2 class="section-title">Email Detail</h2>
+<div class="card-soft">
+  <p><b>To:</b> {{ log.recipient }}<br><b>Subject:</b> {{ log.subject }}<br><b>Sent:</b> {{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  <hr>
+  <div style="background:#f4f7fc;padding:14px;border-radius:12px;max-height:600px;overflow:auto;">{{ log.full_html|safe }}</div>
+  <a href="{{ url_for('admin_emails') }}" class="btn btn-soft mt-3"><i class="bi bi-arrow-left"></i> Back to logs</a>
 </div>
 {% endblock %}

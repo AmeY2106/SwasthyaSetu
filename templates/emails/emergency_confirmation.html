@@ -1,0 +1,21 @@
+{% set inner %}
+<h3 style="margin-top:0; color:#dc3545;">🚨 Emergency Alert Received</h3>
+<p>Dear <b>{{ alert.patient_name }}</b>,</p>
+<p>Your emergency request has been received by the SwasthyaSetu team. We are dispatching the nearest available resources right now.</p>
+
+<div style="background:#fff5f5; border-radius:12px; padding:18px; margin:18px 0; border-left:4px solid #dc3545;">
+  <table style="width:100%; font-size:14px;">
+    <tr><td style="padding:5px 0; color:#666;">Reference #:</td><td><code>EMG-{{ '%05d'|format(alert.id) }}</code></td></tr>
+    <tr><td style="padding:5px 0; color:#666;">Alert Type:</td><td><b>{{ alert.alert_type|upper }}</b></td></tr>
+    <tr><td style="padding:5px 0; color:#666;">Contact:</td><td>{{ alert.patient_phone }}</td></tr>
+    <tr><td style="padding:5px 0; color:#666;">Address:</td><td>{{ alert.patient_address }}</td></tr>
+    <tr><td style="padding:5px 0; color:#666;">Received At:</td><td>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+  </table>
+</div>
+
+<p style="background:#e8f5e9; padding:12px 16px; border-radius:8px; border-left:4px solid #198754; font-size:14px;">
+  ✅ <b>Stay calm. Keep your phone reachable.</b> Our team will call you within minutes to coordinate dispatch.
+</p>
+{% endset %}
+{% set accent = '#dc3545' %}
+{% include 'emails/_base.html' %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="section-title">My Ambulances</h2>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card-soft">
+      <h5>Add Ambulance</h5>
+      <form method="post">{{ form.hidden_tag() }}
+        <div class="mb-2">{{ form.driver_name(class='form-control', placeholder='Driver Name') }}</div>
+        <div class="mb-2">{{ form.driver_phone(class='form-control', placeholder='Driver Phone') }}</div>
+        <div class="mb-2">{{ form.ambulance_number(class='form-control', placeholder='Ambulance # e.g. MH01AB1234') }}</div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">{{ form.latitude(class='form-control', placeholder='Latitude', step='any') }}</div>
+          <div class="col-6">{{ form.longitude(class='form-control', placeholder='Longitude', step='any') }}</div>
+        </div>
+        <div class="mb-2">{{ form.status(class='form-select') }}</div>
+        <button class="btn btn-primary w-100">Save Ambulance</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card-soft">
+      <h5>Existing Ambulances ({{ ambulances|length }})</h5>
+      {% for a in ambulances %}
+      <div class="border rounded p-3 mb-2">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <h6 class="mb-1">{{ a.ambulance_number }} <span class="status-badge status-{{ a.status }}">{{ a.status }}</span></h6>
+            <small class="text-muted">Driver: {{ a.driver_name }} • ☎ {{ a.driver_phone }}<br>Coords: {{ '%.5f'|format(a.latitude) }}, {{ '%.5f'|format(a.longitude) }}</small>
+          </div>
+          <a class="btn btn-sm btn-danger" href="{{ url_for('hospital_delete_ambulance', ambulance_id=a.id) }}" onclick="return confirm('Remove ambulance?')"><i class="bi bi-trash"></i></a>
+        </div>
+        <form method="post" action="{{ url_for('admin_update_ambulance', ambulance_id=a.id) }}" class="row g-1 mt-2">
+          <div class="col-md-3 col-6"><input class="form-control form-control-sm" name="latitude" value="{{ a.latitude }}" placeholder="Lat" step="any"></div>
+          <div class="col-md-3 col-6"><input class="form-control form-control-sm" name="longitude" value="{{ a.longitude }}" placeholder="Lng" step="any"></div>
+          <div class="col-md-2 col-6">
+            <select class="form-select form-select-sm" name="status">
+              <option value="available" {% if a.status=='available' %}selected{% endif %}>Available</option>
+              <option value="assigned" {% if a.status=='assigned' %}selected{% endif %}>Assigned</option>
+              <option value="on_route" {% if a.status=='on_route' %}selected{% endif %}>On Route</option>
+              <option value="reached" {% if a.status=='reached' %}selected{% endif %}>Reached</option>
+            </select>
+          </div>
+          <div class="col-md-2 col-6"><input class="form-control form-control-sm" name="eta_minutes" placeholder="ETA min" type="number"></div>
+          <div class="col-md-2 col-12 d-grid"><button class="btn btn-primary btn-sm">Update (Demo)</button></div>
+        </form>
+      </div>
+      {% else %}<div class="empty-state"><i class="fa-solid fa-truck-medical"></i><p>No ambulances. Add one to start.</p></div>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,63 +1,221 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
+{% block title %}Book a Bed — {{ APP_NAME }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8" data-aos="fade-up">
-        <div class="glass-card border-danger border-2">
-            <div class="card-header bg-danger text-white text-center">
-                <i class="fas fa-ambulance fa-2x me-2"></i>
-                <h4>AI-Assisted Emergency Bed Booking</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST" id="bookingForm">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="form-floating mb-3">
-                        {{ form.hospital_id(class="form-control", id="hospital_id") }}
-                        <label for="hospital_id"><i class="fas fa-hospital me-2"></i>Select Hospital</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        {{ form.patient_name(class="form-control", id="patient_name", placeholder="Full Name") }}
-                        <label for="patient_name"><i class="fas fa-user me-2"></i>Patient Full Name</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        {{ form.reason(class="form-control", id="reason", rows="3", placeholder="Reason") }}
-                        <label for="reason"><i class="fas fa-stethoscope me-2"></i>Reason for Admission</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        {{ form.treatment_needed(class="form-control", id="treatment", placeholder="Treatment") }}
-                        <label for="treatment"><i class="fas fa-syringe me-2"></i>Treatment Required</label>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                {{ form.bed_type(class="form-select", id="bed_type") }}
-                                <label for="bed_type"><i class="fas fa-bed me-2"></i>Bed Type</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating">
-                                {{ form.beds_booked(class="form-control", id="beds", placeholder="Number") }}
-                                <label for="beds"><i class="fas fa-hashtag me-2"></i>Number of Beds</label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {{ form.submit(class="btn btn-danger w-100 rounded-pill py-3 mt-2", onclick="return validateForm()") }}
-                </form>
-            </div>
-        </div>
+<h2 class="section-title"><i class="fa-solid fa-bed"></i> Book a Bed</h2>
+
+<div class="row g-3">
+  <!-- Left: hospital picker -->
+  <div class="col-lg-4">
+    <div class="card-soft">
+      <h5 class="mb-3">Choose Hospital</h5>
+      <form method="get" action="{{ url_for('patient_book_bed_page') }}">
+        <select name="hospital_id" class="form-select" onchange="this.form.submit()">
+          <option value="">-- Pick a hospital --</option>
+          {% for h in hospitals %}
+            <option value="{{ h.id }}" {% if selected_hospital and selected_hospital.id == h.id %}selected{% endif %}>
+              {{ h.hospital_name }} — {{ h.district.name if h.district else '—' }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if selected_hospital %}
+      <hr>
+      <h6>{{ selected_hospital.hospital_name }}</h6>
+      <small class="text-muted">{{ selected_hospital.address }}<br>
+        <i class="bi bi-telephone"></i> {{ selected_hospital.contact_number }}
+      </small>
+      <div class="mt-2">
+        <span class="status-badge status-available">{{ selected_hospital.available_normal_beds }} Normal</span>
+        <span class="status-badge status-on_route">{{ selected_hospital.available_emergency_beds }} Emerg</span>
+        <span class="status-badge status-booked">{{ selected_hospital.available_icu_beds }} ICU</span>
+      </div>
+      <hr>
+      <h6 class="text-muted small">Available Services</h6>
+      <div>
+        {% for s in services[:8] %}
+          <span class="service-badge">{{ s }}</span>
+        {% endfor %}
+        {% if services|length > 8 %}
+          <span class="service-badge">+{{ services|length - 8 }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
+  </div>
+
+  <!-- Right: booking form -->
+  <div class="col-lg-8">
+    {% if not selected_hospital %}
+      <div class="card-soft empty-state">
+        <i class="bi bi-hospital"></i>
+        <h5>Select a hospital from the left to continue.</h5>
+        <p>Or <a href="{{ url_for('index') }}">browse all hospitals</a> with full search & filters.</p>
+      </div>
+    {% elif beds|length == 0 %}
+      <div class="card-soft empty-state">
+        <i class="fa-solid fa-bed"></i>
+        <h5>No beds currently available.</h5>
+        <p>Try another hospital, or check back later.</p>
+      </div>
+    {% else %}
+      <div class="card-soft">
+        <h5 class="section-title">Confirm Your Booking at {{ selected_hospital.hospital_name }}</h5>
+        <form method="post" action="{{ url_for('patient_book_bed_page') }}" id="bookForm">
+          <input type="hidden" name="hospital_id" value="{{ selected_hospital.id }}">
+          <!-- Hidden field that will hold selected bed IDs as CSV -->
+          <input type="hidden" name="selected_beds" id="selected_beds" value="">
+
+          <h6>1️⃣ Select bed(s)</h6>
+          <div class="row g-2 mb-3" id="bedList">
+            {% for b in beds %}
+            <div class="col-md-4 col-6">
+              <label class="bed-card border rounded-3 p-2 d-block" style="cursor:pointer;" data-bed-id="{{ b.id }}">
+                <!-- Checkboxes WITHOUT name attribute – they are only for UI -->
+                <input class="form-check-input bed-check me-1" type="checkbox" value="{{ b.id }}">
+                <strong>{{ b.bed_number }}</strong>
+                <span class="status-badge status-{{ 'on_route' if b.bed_type=='emergency' else ('booked' if b.bed_type=='icu' else 'available') }}">
+                  {{ b.bed_type }}
+                </span><br>
+                <small>{{ b.ward_name or 'General' }} • Floor {{ b.floor or '—' }}</small>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+
+          <hr>
+          <h6>2️⃣ Patient details</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <input class="form-control" name="patient_name" placeholder="Full Name *" value="{{ current_patient.full_name if current_patient else '' }}" required>
+            </div>
+            <div class="col-6">
+              <input class="form-control" type="number" name="patient_age" placeholder="Age *" required>
+            </div>
+            <div class="col-6">
+              <select class="form-select" name="patient_gender" required>
+                <option value="">Gender *</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <input class="form-control" name="patient_phone" placeholder="Phone *" value="{{ current_patient.phone if current_patient else '' }}" required>
+            </div>
+            <div class="col-6">
+              <input class="form-control" type="email" name="patient_email" placeholder="Email *" value="{{ current_user.email }}" required readonly>
+            </div>
+            <div class="col-12">
+              <textarea class="form-control" name="patient_address" rows="2" placeholder="Address">{{ current_patient.address if current_patient else '' }}</textarea>
+            </div>
+            <div class="col-6">
+              <input class="form-control" name="blood_group" placeholder="Blood Group" value="{{ current_patient.blood_group if current_patient else '' }}">
+            </div>
+            <div class="col-6">
+              <input class="form-control" name="emergency_contact" placeholder="Emergency Contact" value="{{ current_patient.emergency_contact if current_patient else '' }}">
+            </div>
+          </div>
+
+          <hr>
+          <h6>3️⃣ Medical info</h6>
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <textarea class="form-control" name="reason" rows="2" placeholder="Reason for admission *" required></textarea>
+            </div>
+            <div class="col-12">
+              <input class="form-control" name="treatment_needed" placeholder="Treatment needed *" required>
+            </div>
+            <div class="col-6">
+              <select class="form-select" name="admission_type">
+                <option value="general">General</option>
+                <option value="emergency">Emergency</option>
+                <option value="icu">ICU</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <input class="form-control" type="datetime-local" name="expected_admission_date">
+            </div>
+          </div>
+
+          {% if services %}
+          <hr>
+          <h6>4️⃣ Required services</h6>
+          <div class="row g-1 mb-3">
+            {% for s in services %}
+            <div class="col-md-4 col-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="services" value="{{ s }}" id="svc_{{ loop.index }}">
+                <label class="form-check-label small" for="svc_{{ loop.index }}">{{ s }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <hr>
+          <h6>5️⃣ Ambulance (optional)</h6>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="ambChk" name="needs_ambulance">
+            <label class="form-check-label" for="ambChk">I need an ambulance for pickup</label>
+          </div>
+          <div id="ambBlock" style="display:none;">
+            <textarea class="form-control mb-2" name="pickup_address" rows="2" placeholder="Pickup address"></textarea>
+            <div class="row g-2">
+              <div class="col-6">
+                <input class="form-control" name="patient_lat" placeholder="Latitude (e.g. 19.0760)">
+              </div>
+              <div class="col-6">
+                <input class="form-control" name="patient_lng" placeholder="Longitude (e.g. 72.8777)">
+              </div>
+            </div>
+            <small class="text-muted">Leave coords blank to use hospital location (demo).</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mt-4" id="submitBtn">
+            <i class="bi bi-check-circle"></i> Confirm Booking
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
+<style>
+  .bed-card { transition: all .2s; }
+  .bed-card:hover { border-color: #0d6efd !important; background:#f0f4ff; }
+  .bed-card.selected { border-color: #0a7c6b !important; background:#e8f5f3; box-shadow:0 4px 12px rgba(10,124,107,.18); }
+</style>
+
 <script>
-    function validateForm() {
-        let beds = document.getElementById('beds').value;
-        if(beds < 1) { alert('Please select at least 1 bed.'); return false; }
-        return confirm('Confirm emergency booking?');
+  // Toggle bed card selection and sync checkbox
+  document.querySelectorAll('.bed-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.type !== 'checkbox') {
+        const cb = card.querySelector('.bed-check');
+        cb.checked = !cb.checked;
+      }
+      card.classList.toggle('selected', card.querySelector('.bed-check').checked);
+    });
+  });
+
+  // Ambulance optional block toggle
+  document.getElementById('ambChk')?.addEventListener('change', e => {
+    document.getElementById('ambBlock').style.display = e.target.checked ? '' : 'none';
+  });
+
+  // On form submit: collect bed IDs from checkboxes and store in hidden field
+  document.getElementById('bookForm')?.addEventListener('submit', function(e) {
+    const checkedBoxes = document.querySelectorAll('.bed-check:checked');
+    const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+    if (selectedIds.length === 0) {
+      e.preventDefault();
+      alert('Please select at least one bed by clicking on a bed card.');
+      return false;
     }
+    // Set hidden field with comma-separated IDs
+    document.getElementById('selected_beds').value = selectedIds.join(',');
+    console.log('[Booking] Selected bed IDs (CSV):', document.getElementById('selected_beds').value);
+    // Allow form to submit normally
+  });
 </script>
 {% endblock %}

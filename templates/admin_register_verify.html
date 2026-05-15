@@ -1,39 +1,15 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5" data-aos="zoom-in">
-        <div class="card">
-            <div class="card-header bg-dark text-white fw-bold">
-                <i class="fas fa-check-circle me-2"></i>Verify OTP for {{ email }}
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.otp.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-key"></i></span>
-                            {{ form.otp(class="form-control", placeholder="Enter OTP") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
-                            {{ form.password(class="form-control", placeholder="New password") }}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.confirm_password.label(class="form-label fw-bold") }}
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
-                            {{ form.confirm_password(class="form-control", placeholder="Confirm password") }}
-                        </div>
-                    </div>
-                    {{ form.submit(class="btn btn-primary w-100 rounded-pill py-2") }}
-                </form>
-            </div>
-        </div>
-    </div>
+{% extends 'base.html' %}
+{% block public_content %}
+<div class="d-flex align-items-center justify-content-center min-vh-100" style="background:#f4f7fc;padding:30px 14px;">
+  <div class="card-soft" style="max-width:440px;width:100%;">
+    <h4 class="section-title">Admin Registration — Verify</h4>
+    <p class="text-muted small">Enter the OTP sent to <b>{{ email }}</b>. (Check Email Logs panel.)</p>
+    <form method="post">{{ form.hidden_tag() }}
+      <div class="mb-3"><label class="form-label">OTP</label>{{ form.otp(class='form-control', placeholder='6-digit code') }}</div>
+      <div class="mb-3"><label class="form-label">New Password</label>{{ form.password(class='form-control') }}</div>
+      <div class="mb-3"><label class="form-label">Confirm Password</label>{{ form.confirm_password(class='form-control') }}</div>
+      <button class="btn btn-primary w-100">Verify & Register</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

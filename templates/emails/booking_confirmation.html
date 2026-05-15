@@ -1,0 +1,38 @@
+{% set inner %}
+<h3 style="margin-top:0; color:#1a2340;">✅ Booking Confirmed</h3>
+<p>Dear <b>{{ booking.patient_name }}</b>,</p>
+<p>Your booking <b style="color:#0d6efd;">{{ booking.booking_id }}</b> at <b>{{ hospital.hospital_name }}</b> is currently <b>{{ booking.status|upper }}</b>.</p>
+
+<div style="background:#f4f7fc; border-radius:12px; padding:14px 18px; margin:18px 0;">
+  <h4 style="margin:0 0 10px; color:#0a7c6b;">Booking Details</h4>
+  <table style="width:100%; font-size:14px;">
+    <tr><td style="padding:4px 0; color:#666;">Booking ID:</td><td><code>{{ booking.booking_id }}</code></td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Hospital:</td><td>{{ hospital.hospital_name }}</td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Address:</td><td>{{ hospital.address }}</td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Hospital Phone:</td><td>{{ hospital.contact_number }}</td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Admission Date:</td><td>{{ booking.expected_admission_date.strftime('%Y-%m-%d %H:%M') if booking.expected_admission_date else 'ASAP' }}</td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Reason:</td><td>{{ booking.reason }}</td></tr>
+    <tr><td style="padding:4px 0; color:#666;">Treatment:</td><td>{{ booking.treatment_needed }}</td></tr>
+  </table>
+</div>
+
+<h4 style="color:#0a7c6b;">🛏️ Allocated Beds</h4>
+<ul style="font-size:14px;">
+  {% for b in beds %}<li>Bed <b>{{ b.bed_number }}</b> ({{ b.bed_type|upper }}, {{ b.ward_name or 'General' }}, Floor {{ b.floor or '—' }})</li>{% endfor %}
+</ul>
+
+{% if ambulance_info %}
+<h4 style="color:#dc3545;">🚑 Ambulance Assigned</h4>
+<ul style="font-size:14px;">
+  <li>Ambulance #: <b>{{ ambulance_info.ambulance_number }}</b></li>
+  <li>Driver: {{ ambulance_info.driver_name }} (☎ {{ ambulance_info.driver_phone }})</li>
+  <li>ETA: <b>{{ ambulance_info.eta_minutes }} mins</b></li>
+</ul>
+{% endif %}
+
+<p style="background:#fff8e1; padding:10px 14px; border-radius:8px; border-left:4px solid #ffc107; font-size:13px;">
+  💡 <b>Show your booking QR code at the hospital admission desk.</b> Your booking reference is <code>{{ booking.booking_id }}</code>.
+</p>
+{% endset %}
+{% set accent = '#198754' %}
+{% include 'emails/_base.html' %}

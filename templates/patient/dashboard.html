@@ -1,46 +1,35 @@
-{% extends "layout.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row">
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-header bg-primary text-white">My Profile</div>
-            <div class="card-body">
-                <i class="fas fa-user-circle fa-4x mb-2"></i>
-                <h4>{{ patient.full_name }}</h4>
-                <p><span class="badge bg-secondary">ID: {{ current_user.unique_id or 'N/A' }}</span></p>
-                <p><i class="fas fa-envelope"></i> {{ current_user.email }}</p>
-                <p><i class="fas fa-phone"></i> {{ patient.phone }}</p>
-                <a href="{{ url_for('profile') }}" class="btn btn-outline-primary btn-sm">Edit Profile</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-success text-white">My Bookings</div>
-            <div class="card-body">
-                {% if bookings %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead><tr><th>Booking ID</th><th>Hospital</th><th>Beds</th><th>Status</th><th>Date</th><th>Details</th></tr></thead>
-                        <tbody>
-                            {% for b in bookings %}
-                            <tr>
-                                <td>{{ b.booking_id[:8] }}</td>
-                                <td>{{ b.hospital.hospital_name }}</td>
-                                <td>{% for bb in b.booked_beds %}{{ bb.bed.bed_number }} ({{ bb.bed.bed_type }})<br>{% endfor %}</td>
-                                <td><span class="badge bg-{{ 'success' if b.status=='confirmed' else 'warning' if b.status=='pending' else 'secondary' }}">{{ b.status }}</span></td>
-                                <td>{{ b.booking_date.strftime('%Y-%m-%d') }}</td>
-                                <td><a href="{{ url_for('patient_booking_details', booking_id=b.booking_id) }}" class="btn btn-sm btn-info">View</a></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-center">No bookings yet. <a href="{{ url_for('index') }}">Browse hospitals</a> to book a bed.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+<h2 class="section-title">My Dashboard</h2>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="stat-card bg-grad-1"><i class="icon bi bi-journal-medical"></i><div class="label">My Bookings</div><div class="value" data-counter="{{ bookings|length }}">0</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card bg-grad-2"><i class="icon bi bi-person-circle"></i><div class="label">Patient ID</div><div class="value" style="font-size:1.1rem;">{{ current_user.unique_id or '—' }}</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card bg-grad-3"><i class="icon fa-solid fa-truck-medical"></i><div class="label">Active Ambulance</div><div class="value" style="font-size:1.1rem;">{% if active_ambulance %}{{ active_ambulance.ambulance.ambulance_number }}{% else %}None{% endif %}</div></div>
+  </div>
+</div>
+
+{% if active_ambulance %}
+<div class="card-soft mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:linear-gradient(135deg,#dc354522,#0d6efd11);">
+  <div>
+    <strong>🚑 Ambulance Dispatched:</strong> {{ active_ambulance.ambulance.ambulance_number }} • Driver: {{ active_ambulance.ambulance.driver_name }} ({{ active_ambulance.ambulance.driver_phone }}) • ETA: {{ active_ambulance.eta_minutes }} mins
+  </div>
+  <a href="{{ url_for('track_ambulance', ambulance_booking_id=active_ambulance.id) }}" class="btn btn-emergency"><i class="bi bi-geo-alt-fill"></i> Track Live</a>
+</div>
+{% endif %}
+
+<div class="card-soft mt-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-list-ul"></i> My Bookings</h5>
+    <a href="{{ url_for('patient_book_bed_page') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus"></i> New Booking</a>
+  </div>
+  <div class="table-responsive mt-3"><table class="table align-middle">
+    <thead><tr><th>Booking ID</th><th>Hospital</th><th>Beds</th><th>Status</th><th>Date</th><th></th></tr></thead>
+    <tbody>{% for b in bookings %}<tr><td><code>{{ b.booking_id[:8] }}</code></td><td>{{ b.hospital.hospital_name }}</td><td>{{ b.booked_beds|length }}</td><td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td><td><small>{{ b.booking_date.strftime('%Y-%m-%d') }}</small></td><td><a class="btn btn-soft btn-sm" href="{{ url_for('patient_booking_details', booking_id=b.booking_id) }}"><i class="bi bi-eye"></i></a></td></tr>{% else %}<tr><td colspan="6" class="text-muted text-center">No bookings yet. <a href="{{ url_for('index') }}">Find a hospital</a></td></tr>{% endfor %}</tbody>
+  </table></div>
 </div>
 {% endblock %}

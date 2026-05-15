@@ -1,0 +1,20 @@
+{% set inner %}
+<h3 style="margin-top:0; color:#198754;">✅ SMTP Test Successful!</h3>
+<p>Dear Admin,</p>
+<p>This is a test email from SwasthyaSetu. If you see this, your email configuration is working correctly.</p>
+
+<div style="background:#e8f5e9; border-radius:12px; padding:18px; margin:18px 0;">
+  <table style="width:100%; font-size:14px;">
+    <tr><td style="padding:6px 0; color:#666;">SMTP Server:</td><td>{{ smtp_server }}</td></tr>
+    <tr><td style="padding:6px 0; color:#666;">SMTP Port:</td><td>{{ smtp_port }}</td></tr>
+    <tr><td style="padding:6px 0; color:#666;">From:</td><td>{{ sender }}</td></tr>
+    <tr><td style="padding:6px 0; color:#666;">Sent At:</td><td>{{ sent_at }}</td></tr>
+  </table>
+</div>
+
+<p style="background:#e3f2fd; padding:10px 14px; border-radius:8px; border-left:4px solid #0d6efd; font-size:13px;">
+  📬 All booking, ambulance, and emergency emails will now be delivered to users' email addresses.
+</p>
+{% endset %}
+{% set accent = '#198754' %}
+{% include 'emails/_base.html' %}
